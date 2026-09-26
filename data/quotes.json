@@ -6,9 +6,9 @@
   "deployment": "v2 \u00b7 Derive Chain (production)",
   "endpoint": "wss://api.lyra.finance/ws",
   "asset": "ETH",
-  "fetched_at": "2026-09-26T12:15:02.926952Z",
+  "fetched_at": "2026-09-26T13:54:10.145003Z",
   "spot": {
-    "value": 2689.735,
+    "value": 2684.815,
     "source": "ETH-PERP mid"
   },
   "policy_inputs": {
@@ -16,21 +16,7 @@
     "strike_otm_pct": 10.0,
     "max_premium_bps": 1200
   },
-  "selected": {
-    "instrument": "ETH-20270326-2400-P",
-    "strike": 2400.0,
-    "expiry": "2027-03-26",
-    "tenor_days": 180.8,
-    "premium_bps": 907.52,
-    "cost_per_day_bps": 5.0189,
-    "ask": 244.1,
-    "ask_size": 13.4,
-    "bid": 230.4,
-    "bid_size": 13.4,
-    "basis": "ask",
-    "target_strike": 2420.76,
-    "strike_otm_pct": 10.77
-  },
+  "selected": null,
   "ladder": [
     {
       "instrument": "ETH-20270326-1400-P",
@@ -38,12 +24,10 @@
       "expiry": "2027-03-26",
       "tenor_days": 180.8,
       "strike": 1400.0,
-      "bid": 25.0,
-      "bid_size": 13.4,
-      "ask": 33.4,
-      "ask_size": 13.4,
-      "premium_bps_ask": 124.18,
-      "premium_bps_mid": 108.56
+      "bid": null,
+      "bid_size": 0.0,
+      "ask": null,
+      "ask_size": 0.0
     },
     {
       "instrument": "ETH-20270326-1500-P",
@@ -51,12 +35,10 @@
       "expiry": "2027-03-26",
       "tenor_days": 180.8,
       "strike": 1500.0,
-      "bid": 32.5,
-      "bid_size": 13.4,
-      "ask": 41.2,
-      "ask_size": 13.4,
-      "premium_bps_ask": 153.17,
-      "premium_bps_mid": 137.0
+      "bid": null,
+      "bid_size": 0.0,
+      "ask": null,
+      "ask_size": 0.0
     },
     {
       "instrument": "ETH-20270326-1600-P",
@@ -64,12 +46,10 @@
       "expiry": "2027-03-26",
       "tenor_days": 180.8,
       "strike": 1600.0,
-      "bid": 41.8,
-      "bid_size": 13.4,
-      "ask": 50.9,
-      "ask_size": 13.4,
-      "premium_bps_ask": 189.24,
-      "premium_bps_mid": 172.32
+      "bid": null,
+      "bid_size": 0.0,
+      "ask": null,
+      "ask_size": 0.0
     },
     {
       "instrument": "ETH-20270326-1800-P",
@@ -77,12 +57,11 @@
       "expiry": "2027-03-26",
       "tenor_days": 180.8,
       "strike": 1800.0,
-      "bid": 67.5,
-      "bid_size": 13.4,
-      "ask": 77.3,
-      "ask_size": 13.4,
-      "premium_bps_ask": 287.39,
-      "premium_bps_mid": 269.17
+      "bid": null,
+      "bid_size": 0.0,
+      "ask": 80.0,
+      "ask_size": 0.5,
+      "premium_bps_ask": 297.97
     },
     {
       "instrument": "ETH-20270326-1900-P",
@@ -90,12 +69,10 @@
       "expiry": "2027-03-26",
       "tenor_days": 180.8,
       "strike": 1900.0,
-      "bid": 84.6,
-      "bid_size": 13.4,
-      "ask": 95.0,
-      "ask_size": 13.4,
-      "premium_bps_ask": 353.19,
-      "premium_bps_mid": 333.86
+      "bid": null,
+      "bid_size": 0.0,
+      "ask": null,
+      "ask_size": 0.0
     },
     {
       "instrument": "ETH-20270326-2000-P",
@@ -103,12 +80,11 @@
       "expiry": "2027-03-26",
       "tenor_days": 180.8,
       "strike": 2000.0,
-      "bid": 105.4,
-      "bid_size": 13.4,
-      "ask": 116.3,
-      "ask_size": 13.4,
-      "premium_bps_ask": 432.38,
-      "premium_bps_mid": 412.12
+      "bid": null,
+      "bid_size": 0.0,
+      "ask": 123.0,
+      "ask_size": 60.0,
+      "premium_bps_ask": 458.13
     },
     {
       "instrument": "ETH-20270326-2100-P",
@@ -116,12 +92,10 @@
       "expiry": "2027-03-26",
       "tenor_days": 180.8,
       "strike": 2100.0,
-      "bid": 130.0,
-      "bid_size": 13.4,
-      "ask": 141.5,
-      "ask_size": 13.4,
-      "premium_bps_ask": 526.07,
-      "premium_bps_mid": 504.7
+      "bid": null,
+      "bid_size": 0.0,
+      "ask": null,
+      "ask_size": 0.0
     },
     {
       "instrument": "ETH-20270326-2200-P",
@@ -129,12 +103,10 @@
       "expiry": "2027-03-26",
       "tenor_days": 180.8,
       "strike": 2200.0,
-      "bid": 158.9,
-      "bid_size": 13.4,
-      "ask": 171.1,
-      "ask_size": 13.4,
-      "premium_bps_ask": 636.12,
-      "premium_bps_mid": 613.44
+      "bid": null,
+      "bid_size": 0.0,
+      "ask": null,
+      "ask_size": 0.0
     },
     {
       "instrument": "ETH-20270326-2300-P",
@@ -142,12 +114,10 @@
       "expiry": "2027-03-26",
       "tenor_days": 180.8,
       "strike": 2300.0,
-      "bid": 192.3,
-      "bid_size": 13.4,
-      "ask": 205.2,
-      "ask_size": 13.4,
-      "premium_bps_ask": 762.9,
-      "premium_bps_mid": 738.92
+      "bid": null,
+      "bid_size": 0.0,
+      "ask": null,
+      "ask_size": 0.0
     },
     {
       "instrument": "ETH-20270326-2400-P",
@@ -155,12 +125,10 @@
       "expiry": "2027-03-26",
       "tenor_days": 180.8,
       "strike": 2400.0,
-      "bid": 230.4,
-      "bid_size": 13.4,
-      "ask": 244.1,
-      "ask_size": 13.4,
-      "premium_bps_ask": 907.52,
-      "premium_bps_mid": 882.06
+      "bid": null,
+      "bid_size": 0.0,
+      "ask": null,
+      "ask_size": 0.0
     },
     {
       "instrument": "ETH-20270326-2500-P",
@@ -168,12 +136,10 @@
       "expiry": "2027-03-26",
       "tenor_days": 180.8,
       "strike": 2500.0,
-      "bid": 273.3,
-      "bid_size": 13.4,
-      "ask": 287.5,
-      "ask_size": 13.4,
-      "premium_bps_ask": 1068.88,
-      "premium_bps_mid": 1042.48
+      "bid": null,
+      "bid_size": 0.0,
+      "ask": null,
+      "ask_size": 0.0
     },
     {
       "instrument": "ETH-20270326-2600-P",
@@ -181,12 +147,10 @@
       "expiry": "2027-03-26",
       "tenor_days": 180.8,
       "strike": 2600.0,
-      "bid": 320.8,
-      "bid_size": 13.4,
-      "ask": 335.7,
-      "ask_size": 13.4,
-      "premium_bps_ask": 1248.08,
-      "premium_bps_mid": 1220.38
+      "bid": null,
+      "bid_size": 0.0,
+      "ask": null,
+      "ask_size": 0.0
     },
     {
       "instrument": "ETH-20270326-2700-P",
@@ -194,12 +158,10 @@
       "expiry": "2027-03-26",
       "tenor_days": 180.8,
       "strike": 2700.0,
-      "bid": 372.8,
-      "bid_size": 13.4,
-      "ask": 388.3,
-      "ask_size": 13.4,
-      "premium_bps_ask": 1443.64,
-      "premium_bps_mid": 1414.82
+      "bid": null,
+      "bid_size": 0.0,
+      "ask": null,
+      "ask_size": 0.0
     },
     {
       "instrument": "ETH-20270326-2800-P",
@@ -207,12 +169,10 @@
       "expiry": "2027-03-26",
       "tenor_days": 180.8,
       "strike": 2800.0,
-      "bid": 429.2,
-      "bid_size": 13.4,
-      "ask": 445.3,
-      "ask_size": 13.4,
-      "premium_bps_ask": 1655.55,
-      "premium_bps_mid": 1625.62
+      "bid": null,
+      "bid_size": 0.0,
+      "ask": null,
+      "ask_size": 0.0
     },
     {
       "instrument": "ETH-20270326-3000-P",
@@ -220,12 +180,10 @@
       "expiry": "2027-03-26",
       "tenor_days": 180.8,
       "strike": 3000.0,
-      "bid": 553.7,
-      "bid_size": 13.4,
-      "ask": 570.7,
-      "ask_size": 13.4,
-      "premium_bps_ask": 2121.77,
-      "premium_bps_mid": 2090.17
+      "bid": null,
+      "bid_size": 0.0,
+      "ask": null,
+      "ask_size": 0.0
     },
     {
       "instrument": "ETH-20270326-3200-P",
@@ -233,12 +191,10 @@
       "expiry": "2027-03-26",
       "tenor_days": 180.8,
       "strike": 3200.0,
-      "bid": 692.2,
-      "bid_size": 13.4,
-      "ask": 709.6,
-      "ask_size": 13.4,
-      "premium_bps_ask": 2638.18,
-      "premium_bps_mid": 2605.83
+      "bid": null,
+      "bid_size": 0.0,
+      "ask": null,
+      "ask_size": 0.0
     },
     {
       "instrument": "ETH-20270625-1400-P",
@@ -360,7 +316,7 @@
       "bid_size": 0.0,
       "ask": 345.0,
       "ask_size": 0.01,
-      "premium_bps_ask": 1282.65
+      "premium_bps_ask": 1285.0
     },
     {
       "instrument": "ETH-20270625-2600-P",
@@ -438,7 +394,7 @@
       "bid_size": 0.0,
       "ask": 765.0,
       "ask_size": 0.22,
-      "premium_bps_ask": 2844.15
+      "premium_bps_ask": 2849.36
     },
     {
       "instrument": "ETH-20270924-1400-P",
@@ -630,7 +586,8 @@
   ],
   "notes": [
     "public unauthenticated feed; no account, no keys, nothing signed",
-    "spot 2,689.7350 from ETH-PERP mid, observed 2026-09-26T12:15:02.926952Z",
-    "grid: active puts, tenor >= 180d, strikes within 50%..120% of spot (51 subscribed, 51 reported)"
+    "spot 2,684.8150 from ETH-PERP mid, observed 2026-09-26T13:54:10.145003Z",
+    "grid: active puts, tenor >= 180d, strikes within 50%..120% of spot (51 subscribed, 51 reported)",
+    "no two-sided long-dated put qualified \u2014 the venue is unquoted at this tenor"
   ]
 }

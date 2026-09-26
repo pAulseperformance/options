@@ -110,6 +110,10 @@ Integration points, in the order they are worth doing:
   (by design — no keys). Buying the put is a human action on the venue's own interface.
 - **Only the 181d series is quoted.** 272d and 363d were empty at measurement; the adapter
   re-measures each run, so the tenor follows the book rather than a guess.
+- **The long-dated book is intermittent, not persistent.** Fully quoted 2026-09-26 12:15 UTC
+  (16 strikes two-sided) and empty two-sided by 13:53 UTC the same day (the maker left; the perp
+  kept trading). Re-measure at action time — the plan publishes "no venue available" itself when
+  the book is gone, which is the honest answer.
 - **v3 re-gate.** When Derive v3 mainnet launches, re-run `ops/derive_book_probe.mjs`; a non-empty
   production book is the trigger to re-point the adapter.
 - `premium_bps` in policy stays `0.0` **on purpose**: it keeps a venue unquoted unless

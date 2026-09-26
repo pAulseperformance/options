@@ -132,3 +132,14 @@ contract — `GET /api/options-coverage` (`options.coverage.view/1`) + an *Optio
 (coverage %, dollars uninsured, the measured instrument, the notes; EXPIRED past the quote window).
 Dashboard tests 262 green (10 new), the card SSR-verified in all four states, live at
 `http://100.108.43.24:8899` since 2026-09-26 ~13:05 UTC.
+
+**Then the book vanished (same day, 13:53 UTC).** A re-measure — same adapter, same policy, ~1.5h
+after the deploy-time scan — found **zero two-sided strikes** across the 181d ladder (16/16 quoted
+at 12:15; two scans 40 s apart agree; a few one-sided asks remain, sizes 0.5–60; ETH-PERP is still
+two-sided, so the venue is alive and it is the options MAKER that left). The plan correctly
+republished as **NO VENUE AVAILABLE — uninsured**, reason attached:
+`derive: the last quote run found no qualifying long-dated put`.
+**The lesson for this file: Derive v2's long-dated options book is intermittent, not persistent** —
+measure at action time, and buying is possible only while the maker is quoting. (The 12:15 "covered"
+artifact stays in history as exactly the kind of confident-but-gone quote this repo exists to
+catch.)

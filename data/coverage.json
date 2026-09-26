@@ -4,7 +4,7 @@
   "read_only": true,
   "subject": {
     "label": "spot + margin, all accounts",
-    "exposure_usd": 4860.0
+    "exposure_usd": 4835.92
   },
   "policy": {
     "target_ratio": 0.5,
@@ -14,43 +14,30 @@
     "quotes_max_age_hours": 24
   },
   "plan": {
-    "exposure_usd": 4860.0,
+    "exposure_usd": 4835.92,
     "target_ratio": 0.5,
-    "covered_usd": 2430.0,
-    "uncovered_usd": 2430.0,
-    "coverage_pct": 50.0,
-    "is_covered": true,
+    "covered_usd": 0.0,
+    "uncovered_usd": 4835.92,
+    "coverage_pct": 0.0,
+    "is_covered": false,
     "burned_off": false,
-    "legs": [
-      {
-        "venue": "derive",
-        "instrument": "long_put",
-        "tenor_days": 181,
-        "notional_usd": 2430.0,
-        "cost_bps": 907.52,
-        "cost_usd": 220.53,
-        "cost_per_day_bps": 5.0139,
-        "rationale": "cheapest of 1 venue(s) that can cover 180d: 9.08% of protected notional over 181d"
-      }
-    ],
+    "legs": [],
     "triggers": [
       "insurance is bought against a thesis, not a price: re-evaluate when the position it protects is closed"
     ],
     "notes": [
-      "unavailable: lighter_options: Lighter options do not exist yet; placeholder for the expected venue",
-      "priced from the live book: ETH-20270326-2400-P ask 244.1 \u2014 907.52 bps of protected notional @ 2026-09-26T12:15:02.926952Z"
+      "NO VENUE AVAILABLE \u2014 position is uninsured",
+      "derive: live but has no real quote (premium_bps=0.0)",
+      "lighter_options: Lighter options do not exist yet; placeholder for the expected venue",
+      "derive: the last quote run found no qualifying long-dated put"
     ]
   },
   "quotes": {
     "source": "data/quotes.json",
     "venue": "derive",
-    "fetched_at": "2026-09-26T12:15:02.926952Z",
-    "age_hours": 0.0,
-    "applied": true,
-    "reason": null,
-    "instrument": "ETH-20270326-2400-P",
-    "premium_bps": 907.52,
-    "cost_per_day_bps": 5.0189,
-    "tenor_days": 180.8
+    "fetched_at": "2026-09-26T13:54:10.145003Z",
+    "age_hours": 0.01,
+    "applied": false,
+    "reason": "no qualifying two-sided quote in the last measurement"
   }
 }
