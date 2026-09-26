@@ -70,6 +70,7 @@ and the point of the design.
 ## Provenance
 
 - Venue research: `brain/inbox/2026-09-26/20260926T034500-f8c5b239-derive-v3-options-integration-research.md`
+- Exposure basis: **1.8011419346783952 ETH** of spot on `0xe83ECEe6ad078a64F641BdA924c841Fd0F7D58f9` — the verified-so-spot from the 2026-09-25 hedge-sizing run (`trading-dashboard/research/hedge_sizing_2026-09-25.md`), re-verified live 2026-09-26 (balance unchanged; ≈$4,836 at $2,684.92). The artifact's $4,860 = the same balance at that run's ~$2,696 price. Margin accounts were ≈empty, so the input is effectively spot-only.
 - Pattern: `lighter-core` (`apps/` vs `packages/`, data-not-code boundaries).
 - Naming/scope correction (2026-09-26): originally `hedge-core`, framed as joining the MM bot's
   hedge leg. Wrong on both counts — this is options insurance for your own positions.
