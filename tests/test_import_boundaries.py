@@ -69,9 +69,9 @@ def test_no_boundary_violations() -> None:
 
 def test_the_scanner_actually_catches_violations() -> None:
     """A guard nobody has seen fail is a guard nobody should trust."""
-    app_names = {"coverage_cli", "options_adapter"}
-    caught = scan_source("from coverage_cli import main\n", "apps/perp_short_adapter/x.py",
+    app_names = {"coverage_cli", "derive_adapter"}
+    caught = scan_source("from coverage_cli import main\n", "apps/derive_adapter/x.py",
                          app_names)
     assert caught, "scanner failed to catch an app importing a sibling app"
-    caught2 = scan_source("import coverage_cli\n", "packages/hedge_core/x.py", app_names)
+    caught2 = scan_source("import coverage_cli\n", "packages/options_core/x.py", app_names)
     assert caught2, "scanner failed to catch a package importing an app"

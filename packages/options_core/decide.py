@@ -1,32 +1,43 @@
-"""The decision engine: exposure + policy + mechanisms -> one explicit plan.
+"""The decision: exposure + policy + venues -> one explicit recommendation.
 
 Design rule, and the whole reason this is a separate package: **a plan never silently covers
-nothing.** If no mechanism can execute, the plan says so and names why for each one. Silence is
-reserved for "nothing to do", never for "could not do it".
+nothing.** If no venue can sell the insurance, the plan says so and names the reason for each one.
+Silence is reserved for "nothing to do", never for "could not do it".
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from . import costs
 from .mechanisms import Mechanism
 
 
 @dataclass(frozen=True)
 class HedgeLeg:
-    mechanism: str
+    venue: str
+    instrument: str
+    tenor_days: int
     notional_usd: float
     cost_bps: float
-    caps_upside: bool
-    has_liquidation_risk: bool
     rationale: str
+
+    @property
+    def cost_usd(self) -> float:
+        return self.notional_usd * self.cost_bps / costs.BPS
+
+    @property
+    def cost_per_day_bps(self) -> float:
+        return costs.cost_per_day_bps(self.cost_bps, self.tenor_days)
 
     def as_dict(self) -> dict:
         return {
-            "mechanism": self.mechanism,
+            "venue": self.venue,
+            "instrument": self.instrument,
+            "tenor_days": self.tenor_days,
             "notional_usd": round(self.notional_usd, 2),
             "cost_bps": round(self.cost_bps, 4),
-            "caps_upside": self.caps_upside,
-            "has_liquidation_risk": self.has_liquidation_risk,
+            "cost_usd": round(self.cost_usd, 2),
+            "cost_per_day_bps": round(self.cost_per_day_bps, 4),
             "rationale": self.rationale,
         }
 
@@ -40,7 +51,7 @@ class HedgePlan:
     uncovered_usd: float = 0.0
     triggers: list[str] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
-    burned_off: bool = False   # a trigger says hedged = 0 right now
+    burned_off: bool = False   # a trigger says insured = 0 right now
 
     @property
     def is_covered(self) -> bool:
@@ -68,16 +79,15 @@ class HedgePlan:
 
 
 def plan_hedge(exposure_usd: float, policy: dict, mechanisms: list[Mechanism],
-               horizon_days: float | None = None, burned_off: bool = False) -> HedgePlan:
-    """Choose the cheapest available mechanism for the policy's target coverage.
+               burned_off: bool = False) -> HedgePlan:
+    """Choose the cheapest venue that can actually sell the required protection.
 
-    `burned_off` short-circuits to a zero-hedge plan: a policy trigger has fired that says the
-    correct hedge is none. That is a real decision, not an absence of one, and is recorded.
+    `burned_off` short-circuits to a zero plan: a policy trigger has fired that says the correct
+    hedge is none. That is a real decision, not an absence of one, and is recorded as such.
     """
     target_ratio = float(policy.get("target_ratio", 0.0))
-    horizon = float(horizon_days if horizon_days is not None
-                    else policy.get("horizon_days", 30))
-    max_cost_bps = policy.get("max_cost_bps")
+    min_tenor = int(policy.get("min_tenor_days", 0))
+    max_premium_bps = policy.get("max_premium_bps")
     triggers = [str(t) for t in policy.get("triggers", [])]
     notes: list[str] = []
 
@@ -85,13 +95,13 @@ def plan_hedge(exposure_usd: float, policy: dict, mechanisms: list[Mechanism],
         return HedgePlan(
             exposure_usd=exposure_usd, target_ratio=target_ratio, covered_usd=0.0,
             uncovered_usd=0.0, triggers=triggers, burned_off=True,
-            notes=["a policy trigger fires: the correct hedge is currently zero"],
+            notes=["a policy trigger fires: the correct amount of insurance is currently zero"],
         )
 
     if exposure_usd <= 0:
         return HedgePlan(exposure_usd=exposure_usd, target_ratio=target_ratio,
                          covered_usd=0.0, uncovered_usd=0.0, triggers=triggers,
-                         notes=["no exposure: nothing to hedge"])
+                         notes=["no exposure: nothing to insure"])
 
     target_notional = exposure_usd * target_ratio
 
@@ -100,27 +110,34 @@ def plan_hedge(exposure_usd: float, policy: dict, mechanisms: list[Mechanism],
     for mech in mechanisms:
         avail = mech.availability()
         if not avail.ok:
-            unavailable.append(f"{mech.name}: {avail.reason}")
+            unavailable.append(avail.reason)
             continue
-        candidates.append((mech, mech.cost_bps(target_notional, horizon)))
+        if min_tenor and mech.tenor_days < min_tenor:
+            unavailable.append(
+                f"{mech.name}: tenor {mech.tenor_days}d is shorter than the policy's "
+                f"{min_tenor}d minimum cover"
+            )
+            continue
+        candidates.append((mech, mech.premium_bps_for(target_notional)))
 
     if not candidates:
         # The failure mode this whole package guards against.
-        notes.append("NO MECHANISM AVAILABLE — exposure is unhedged")
+        notes.append("NO VENUE AVAILABLE — position is uninsured")
         notes.extend(unavailable)
         return HedgePlan(
             exposure_usd=exposure_usd, target_ratio=target_ratio, covered_usd=0.0,
             uncovered_usd=exposure_usd, triggers=triggers, notes=notes,
         )
 
-    # Cheapest first; policy order breaks ties (stable sort preserves it).
+    # Cheapest premium first; policy order breaks ties (stable sort preserves it).
     candidates.sort(key=lambda pair: pair[1])
     chosen, chosen_cost = candidates[0]
 
-    if max_cost_bps is not None and chosen_cost > float(max_cost_bps):
+    if max_premium_bps is not None and chosen_cost > float(max_premium_bps):
         notes.append(
-            f"cheapest available mechanism costs {chosen_cost:.1f} bps, above the "
-            f"policy ceiling of {float(max_cost_bps):.1f} bps — declining to hedge"
+            f"cheapest available insurance costs {costs.premium_as_pct(chosen_cost):.2f}% of "
+            f"protected notional ({chosen_cost:.0f} bps), above the policy ceiling of "
+            f"{costs.premium_as_pct(float(max_premium_bps)):.2f}% — declining to insure"
         )
         notes.extend(f"unavailable: {u}" for u in unavailable)
         return HedgePlan(
@@ -128,17 +145,20 @@ def plan_hedge(exposure_usd: float, policy: dict, mechanisms: list[Mechanism],
             uncovered_usd=exposure_usd, triggers=triggers, notes=notes,
         )
 
-    rationale = (f"cheapest of {len(candidates)} available mechanism(s) at {chosen_cost:.1f} bps "
-                 f"over {horizon:.0f}d")
+    rationale = (
+        f"cheapest of {len(candidates)} venue(s) that can cover {min_tenor}d: "
+        f"{costs.premium_as_pct(chosen_cost):.2f}% of protected notional over "
+        f"{chosen.tenor_days}d"
+    )
     if unavailable:
         notes.extend(f"unavailable: {u}" for u in unavailable)
 
     leg = HedgeLeg(
-        mechanism=chosen.name,
+        venue=chosen.name,
+        instrument="long_put",
+        tenor_days=chosen.tenor_days,
         notional_usd=target_notional,
         cost_bps=chosen_cost,
-        caps_upside=chosen.caps_upside,
-        has_liquidation_risk=chosen.has_liquidation_risk,
         rationale=rationale,
     )
     return HedgePlan(

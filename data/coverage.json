@@ -1,35 +1,32 @@
 {
   "schema_version": 1,
-  "produced_by": "hedge-core/coverage_cli",
+  "produced_by": "options/coverage_cli",
   "read_only": true,
+  "subject": {
+    "label": "spot + margin, all accounts",
+    "exposure_usd": 4860.0
+  },
   "policy": {
     "target_ratio": 0.5,
-    "horizon_days": 30,
-    "max_cost_bps": 60.0
+    "min_tenor_days": 180,
+    "max_premium_bps": 1200
   },
   "plan": {
     "exposure_usd": 4860.0,
     "target_ratio": 0.5,
-    "covered_usd": 2430.0,
-    "uncovered_usd": 2430.0,
-    "coverage_pct": 50.0,
-    "is_covered": true,
+    "covered_usd": 0.0,
+    "uncovered_usd": 4860.0,
+    "coverage_pct": 0.0,
+    "is_covered": false,
     "burned_off": false,
-    "legs": [
-      {
-        "mechanism": "perp_short",
-        "notional_usd": 2430.0,
-        "cost_bps": 2.0,
-        "caps_upside": true,
-        "has_liquidation_risk": true,
-        "rationale": "cheapest of 1 available mechanism(s) at 2.0 bps over 30d"
-      }
-    ],
+    "legs": [],
     "triggers": [
-      "daily close above 3200 on ETH cuts the hedge ratio to 0 (call-wall trim, per t_61054c5b)"
+      "insurance is bought against a thesis, not a price: re-evaluate when the position it protects is closed"
     ],
     "notes": [
-      "unavailable: long_put: derive: V3 mainnet pre-launch: production orderbook verified empty on 2026-09-26"
+      "NO VENUE AVAILABLE \u2014 position is uninsured",
+      "derive: V3 mainnet pre-launch: production orderbook verified empty on 2026-09-26",
+      "lighter_options: Lighter options do not exist yet; placeholder for the expected venue"
     ]
   }
 }

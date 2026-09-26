@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/pAulseperformance/options/coverage.schema.json",
+  "title": "options coverage artifact",
+  "description": "Published recommendation for protective puts. Consumed as DATA by other projects. Bump schema_version on any breaking change.",
+  "type": "object",
+  "required": ["schema_version", "produced_by", "subject", "plan"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "produced_by": { "type": "string" },
+    "read_only": {
+      "type": "boolean",
+      "description": "Always true. This artifact is a recommendation, never an executed order."
+    },
+    "subject": {
+      "type": "object",
+      "description": "Which exposure this covers. Your positions span accounts; the label records which.",
+      "required": ["label", "exposure_usd"],
+      "properties": {
+        "label": { "type": "string" },
+        "exposure_usd": { "type": "number" }
+      }
+    },
+    "policy": { "type": "object" },
+    "plan": {
+      "type": "object",
+      "required": ["exposure_usd", "target_ratio", "covered_usd", "coverage_pct",
+                   "is_covered", "legs", "notes"],
+      "properties": {
+        "exposure_usd": { "type": "number" },
+        "target_ratio": { "type": "number" },
+        "covered_usd": { "type": "number" },
+        "uncovered_usd": { "type": "number" },
+        "coverage_pct": { "type": "number" },
+        "is_covered": { "type": "boolean" },
+        "burned_off": {
+          "type": "boolean",
+          "description": "A policy trigger fires and the correct amount of insurance is zero. A decision, not an absence of one."
+        },
+        "legs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["venue", "instrument", "notional_usd", "cost_bps", "tenor_days"],
+            "properties": {
+              "venue": { "type": "string" },
+              "instrument": { "const": "long_put" },
+              "tenor_days": { "type": "integer" },
+              "notional_usd": { "type": "number" },
+              "cost_bps": { "type": "number" },
+              "cost_usd": { "type": "number" },
+              "cost_per_day_bps": {
+                "type": "number",
+                "description": "Premium amortised over the tenor — the honest way to compare puts of different lengths."
+              },
+              "rationale": { "type": "string" }
+            }
+          }
+        },
+        "triggers": { "type": "array", "items": { "type": "string" } },
+        "notes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Mandatory when is_covered is false: every unavailable venue states why."
+        }
+      }
+    }
+  }
+}

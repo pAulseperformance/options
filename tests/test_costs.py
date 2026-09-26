@@ -1,4 +1,4 @@
-"""Cost accounting: one unit (bps of notional) so unlike mechanisms are comparable."""
+"""Cost accounting: one unit (bps of notional) so venues and tenors are comparable."""
 from __future__ import annotations
 
 import sys
@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "packages"))
 
 import pytest  # noqa: E402
 
-from hedge_core import costs  # noqa: E402
+from options_core import costs  # noqa: E402
 
 
 def test_bps_of_basic():
@@ -22,31 +22,30 @@ def test_bps_of_refuses_zero_notional():
         costs.bps_of(10.0, 0.0)
 
 
-def test_perp_funding_is_signed():
-    """Positive funding = the short RECEIVES it. That is the whole reason to compare."""
-    income = costs.perp_short_cost_bps(funding_bps_per_day=0.5, horizon_days=30)
-    assert income == pytest.approx(15.0)
-
-    paid = costs.perp_short_cost_bps(funding_bps_per_day=-0.5, horizon_days=30)
-    assert paid == pytest.approx(-15.0)
-
-    with_exec = costs.perp_short_cost_bps(0.0, 30, entry_exit_bps=2.0)
-    assert with_exec == pytest.approx(2.0)
+def test_put_premium_bps():
+    # 2,000 USD premium protecting 20,000 USD notional = 1,000 bps = 10%.
+    assert costs.put_premium_bps(2_000.0, 20_000.0) == pytest.approx(1_000.0)
 
 
-def test_long_put_cost_is_premium_only():
-    # 2,000 USD premium protecting 20,000 USD notional = 1,000 bps.
-    assert costs.long_put_cost_bps(2_000.0, 20_000.0) == pytest.approx(1_000.0)
+def test_premium_does_not_scale_with_holding_period():
+    """A put is paid once at entry and then protects its whole life. Nothing accrues."""
+    assert costs.put_premium_bps(500.0, 10_000.0) == costs.put_premium_bps(500.0, 10_000.0)
 
 
-def test_put_cost_does_not_scale_with_horizon():
-    """The defining difference from funding carry: the premium is paid once."""
-    a = costs.long_put_cost_bps(500.0, 10_000.0)
-    b = costs.long_put_cost_bps(500.0, 10_000.0)
-    assert a == b
+def test_cost_per_day_is_how_tenors_compare():
+    """The point of amortising: a pricier long-dated put can be cheaper per day of cover."""
+    short = costs.cost_per_day_bps(total_bps=300.0, tenor_days=30)    # 10 bps/day
+    long = costs.cost_per_day_bps(total_bps=900.0, tenor_days=363)    # ~2.5 bps/day
+    assert short == pytest.approx(10.0)
+    assert long < short, "cheaper per day despite costing 3x more up front"
 
 
-def test_implied_leverage_days():
-    assert costs.implied_leverage_days(60.0, 30.0) == pytest.approx(2.0)
+def test_cost_per_day_refuses_nonpositive_tenor():
     with pytest.raises(ValueError):
-        costs.implied_leverage_days(60.0, 0.0)
+        costs.cost_per_day_bps(300.0, 0.0)
+    with pytest.raises(ValueError):
+        costs.cost_per_day_bps(300.0, -5.0)
+
+
+def test_premium_as_pct():
+    assert costs.premium_as_pct(800.0) == pytest.approx(8.0)

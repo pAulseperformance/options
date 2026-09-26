@@ -1,9 +1,10 @@
-"""coverage_cli — ask what the insurance leg should be, and publish the answer.
+"""coverage_cli — ask what the insurance should be, and publish the answer.
 
-Read-only. Produces data/coverage.json, which is the artifact every other project consumes.
-Deliberately takes exposure as an INPUT rather than reading wallets itself: sourcing exposure is
-each consumer's job (the dashboard knows the positions, the bot knows the book), and a decision
-layer that fetches its own inputs is a decision layer that cannot be tested.
+Read-only. Produces data/coverage.json, the artifact other projects consume.
+
+Exposure is an INPUT, not a fetch. Your positions live across several accounts (spot and margin)
+and the authoritative number is whichever one you point at this; a decision layer that goes and
+fetches its own inputs is a decision layer that cannot be tested.
 """
 from __future__ import annotations
 
@@ -15,7 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "packages"))  # apps may import packages (rule 1)
 
-from hedge_core import build_mechanisms, plan_hedge  # noqa: E402
+from options_core import build_mechanisms, plan_hedge  # noqa: E402
 
 SCHEMA_VERSION = 1
 
@@ -38,11 +39,11 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="coverage_cli", description=__doc__)
     ap.add_argument("--policy", default=str(ROOT / "config" / "policy.yml"))
     ap.add_argument("--exposure-usd", type=float, required=True,
-                    help="current spot exposure to hedge, in USD")
-    ap.add_argument("--horizon-days", type=float, default=None,
-                    help="override the policy horizon for the cost comparison")
+                    help="total exposure to insure, in USD (sum across accounts as you see fit)")
+    ap.add_argument("--label", default=None,
+                    help="what this exposure is (e.g. 'spot ETH', 'margin BTC'), recorded")
     ap.add_argument("--burned-off", action="store_true",
-                    help="a policy trigger fires; the correct hedge is currently zero")
+                    help="a policy trigger fires; the correct amount of insurance is zero")
     ap.add_argument("--write", default=None, help="path to write coverage.json")
     ap.add_argument("--json", action="store_true", help="print the artifact to stdout")
     args = ap.parse_args(argv)
@@ -53,18 +54,21 @@ def main(argv: list[str] | None = None) -> int:
         exposure_usd=args.exposure_usd,
         policy=policy,
         mechanisms=mechanisms,
-        horizon_days=args.horizon_days,
         burned_off=args.burned_off,
     )
 
     artifact = {
         "schema_version": SCHEMA_VERSION,
-        "produced_by": "hedge-core/coverage_cli",
+        "produced_by": "options/coverage_cli",
         "read_only": True,
+        "subject": {
+            "label": args.label or "(unlabelled exposure)",
+            "exposure_usd": round(args.exposure_usd, 2),
+        },
         "policy": {
             "target_ratio": policy.get("target_ratio"),
-            "horizon_days": args.horizon_days or policy.get("horizon_days"),
-            "max_cost_bps": policy.get("max_cost_bps"),
+            "min_tenor_days": policy.get("min_tenor_days"),
+            "max_premium_bps": policy.get("max_premium_bps"),
         },
         "plan": plan.as_dict(),
     }

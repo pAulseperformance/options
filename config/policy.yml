@@ -1,30 +1,36 @@
 # Every number here is a decision, not a constant. Edit this file, not the code.
 #
-# Sizing comes from the locked t_61054c5b memo (2026-09-25): 50% hedge ratio on the ETH leg,
-# perp short, first liquidation +37.2%. That work is mechanism #1 and is NOT re-derived here.
+# This covers YOUR positions — spot and margin, across accounts — and is independent of any bot.
+# The market maker's book is the market maker's business.
 
-target_ratio: 0.50           # share of spot exposure to hedge
-horizon_days: 30             # default comparison horizon for funding carry
-max_cost_bps: 60.0           # refuse to hedge if the cheapest mechanism costs more than this
+target_ratio: 0.50          # share of exposure to insure
 
-# Policy triggers. A trigger that fires means the correct hedge changes; they are recorded on
-# every plan so a consumer never has to re-derive why the number is what it is.
+# Cover must outlast the position it protects. This is what rules out rolling short-dated puts:
+# they are cheaper per contract and far more expensive per day of cover, and they leave the gap
+# you most need closed — the one between expiries.
+min_tenor_days: 180
+
+# Refuse if the cheapest insurance costs more than this share of the protected notional.
+# 1200 bps = 12%. Moving this is a real risk decision; make it deliberately.
+max_premium_bps: 1200
+
+# Recorded on every plan so a consumer never has to re-derive why the number is what it is.
 triggers:
-  - "daily close above 3200 on ETH cuts the hedge ratio to 0 (call-wall trim, per t_61054c5b)"
+  - "insurance is bought against a thesis, not a price: re-evaluate when the position it protects is closed"
 
-mechanisms:
-  # Mechanism #1 — live. Funding is signed: positive = the short RECEIVES it.
-  - kind: perp_short
-    venue: lighter
-    venue_live: true
-    funding_bps_per_day: 0.0       # refresh from the live funding read before acting
-    entry_exit_bps: 2.0            # measured reach, per the hedge plan A1 experiment
-
-  # Mechanism #2 — gated. Flip venue_live to true ONLY when ops/derive_book_probe.mjs shows a
-  # non-empty book on the executing venue. Listed before the flip so its cost is still visible.
-  - kind: long_put
+venues:
+  # Primary candidate. Gate stays closed until ops/derive_book_probe.mjs shows a non-empty book.
+  - kind: put_venue
     venue: derive
-    venue_live: false
-    venue_note: "V3 mainnet pre-launch: production orderbook verified empty on 2026-09-26"
-    premium_bps: 0.0               # set from a real quote, never guessed
-    tenor_days: 270                # within Derive's 181/272/363d quarterly ladder
+    live: false
+    note: "V3 mainnet pre-launch: production orderbook verified empty on 2026-09-26"
+    premium_bps: 0.0        # MUST come from a real quote. Never guessed.
+    tenor_days: 270         # Derive lists 181 / 272 / 363d quarterlies
+
+  # Expected later. Not listed yet — no instrument, no quote, nothing to cost.
+  - kind: put_venue
+    venue: lighter_options
+    live: false
+    note: "Lighter options do not exist yet; placeholder for the expected venue"
+    premium_bps: 0.0
+    tenor_days: 270
