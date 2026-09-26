@@ -55,8 +55,6 @@ and the point of the design.
 - **Derive v3 is pre-launch.** Production orderbook verified empty on 2026-09-26 (testnet has a
   book as positive control). Re-check with `ops/derive_book_probe.mjs`. **A non-empty production
   book is the trigger to re-point the adapter at v3.**
-- **No backup yet:** `pAulseperformance/options` does not exist on GitHub; the remote is wired but
-  unpushable until it does.
 
 ## Open items
 
@@ -64,8 +62,8 @@ and the point of the design.
    pyyaml --no-project python -m derive_quotes`, then run coverage with `--quotes data/quotes.json`.
 2. **Rail the dashboard** on `data/coverage.json` (integration point #1 in the README).
 3. **Re-run the v3 venue gate** (`ops/derive_book_probe.mjs`) when Derive announces v3 mainnet.
-4. **Create the GitHub remote** `pAulseperformance/options` (private, exact name — the remote is
-   already wired there) so the repo has a backup.
+4. **Keep pushing:** remote `origin` = `pAulseperformance/options` (exists — verified 2026-09-26);
+   push `main` after each session. A local-only commit is not a backup.
 
 ## Provenance
 
