@@ -2,3 +2,7 @@ __pycache__/
 *.pyc
 .venv/
 .pytest_cache/
+
+# Agent task workspaces check out this repo as git worktrees here; they must never be
+# staged into main (a nested checkout, .git file and all).
+.worktrees/
