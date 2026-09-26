@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "produced_by": "hedge-core/coverage_cli",
+  "read_only": true,
+  "policy": {
+    "target_ratio": 0.5,
+    "horizon_days": 30,
+    "max_cost_bps": 60.0
+  },
+  "plan": {
+    "exposure_usd": 4860.0,
+    "target_ratio": 0.5,
+    "covered_usd": 2430.0,
+    "uncovered_usd": 2430.0,
+    "coverage_pct": 50.0,
+    "is_covered": true,
+    "burned_off": false,
+    "legs": [
+      {
+        "mechanism": "perp_short",
+        "notional_usd": 2430.0,
+        "cost_bps": 2.0,
+        "caps_upside": true,
+        "has_liquidation_risk": true,
+        "rationale": "cheapest of 1 available mechanism(s) at 2.0 bps over 30d"
+      }
+    ],
+    "triggers": [
+      "daily close above 3200 on ETH cuts the hedge ratio to 0 (call-wall trim, per t_61054c5b)"
+    ],
+    "notes": [
+      "unavailable: long_put: derive: V3 mainnet pre-launch: production orderbook verified empty on 2026-09-26"
+    ]
+  }
+}

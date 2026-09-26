@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hedge-core"
+version = "0.1.0"
+description = "The insurance leg as a decision layer: venue-agnostic hedge mechanism selection. Read-only, no keys."
+requires-python = ">=3.10"
+dependencies = []          # stdlib only, deliberately: the decision layer has no reason to
+                           # depend on a venue's SDK. Adapters carry their own dependencies.
+
+[project.optional-dependencies]
+policy-yaml = ["PyYAML>=6"]
+dev = ["pytest>=8"]
+
+[tool.setuptools]
+packages = ["hedge_core"]
+package-dir = {"" = "packages"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

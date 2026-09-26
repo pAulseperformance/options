@@ -1,0 +1,30 @@
+# Every number here is a decision, not a constant. Edit this file, not the code.
+#
+# Sizing comes from the locked t_61054c5b memo (2026-09-25): 50% hedge ratio on the ETH leg,
+# perp short, first liquidation +37.2%. That work is mechanism #1 and is NOT re-derived here.
+
+target_ratio: 0.50           # share of spot exposure to hedge
+horizon_days: 30             # default comparison horizon for funding carry
+max_cost_bps: 60.0           # refuse to hedge if the cheapest mechanism costs more than this
+
+# Policy triggers. A trigger that fires means the correct hedge changes; they are recorded on
+# every plan so a consumer never has to re-derive why the number is what it is.
+triggers:
+  - "daily close above 3200 on ETH cuts the hedge ratio to 0 (call-wall trim, per t_61054c5b)"
+
+mechanisms:
+  # Mechanism #1 — live. Funding is signed: positive = the short RECEIVES it.
+  - kind: perp_short
+    venue: lighter
+    venue_live: true
+    funding_bps_per_day: 0.0       # refresh from the live funding read before acting
+    entry_exit_bps: 2.0            # measured reach, per the hedge plan A1 experiment
+
+  # Mechanism #2 — gated. Flip venue_live to true ONLY when ops/derive_book_probe.mjs shows a
+  # non-empty book on the executing venue. Listed before the flip so its cost is still visible.
+  - kind: long_put
+    venue: derive
+    venue_live: false
+    venue_note: "V3 mainnet pre-launch: production orderbook verified empty on 2026-09-26"
+    premium_bps: 0.0               # set from a real quote, never guessed
+    tenor_days: 270                # within Derive's 181/272/363d quarterly ladder
