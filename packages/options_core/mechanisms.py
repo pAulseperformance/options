@@ -8,7 +8,8 @@ Nothing here places an order. Availability is a gate and the gate is closed by d
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from datetime import datetime, timezone
 from typing import Protocol, runtime_checkable
 
 from . import costs
@@ -94,3 +95,92 @@ def build_mechanisms(policy: dict) -> list[Mechanism]:
             note=spec.get("note", ""),
         ))
     return venues
+
+
+def overlay_quotes(venues: list[Mechanism], quotes: dict, *, source: str,
+                   max_age_hours: float | None,
+                   now: datetime) -> tuple[list[Mechanism], list[str], dict | None]:
+    """Replace a venue's placeholder premium with a measured one — when the measurement is fresh.
+
+    The quotes artifact (see apps/derive_quotes) is a measurement with a timestamp; a plan may
+    use it only while it is young enough to still describe the market. Stale, unreadable, or
+    missing quotes leave the venue exactly as policy wrote it — a placeholder can never stand in
+    for a measurement.
+
+    Returns (venues, notes, meta). Notes go onto the plan (they explain every outcome, including
+    "we had quotes and chose not to use them"); meta is the provenance block for the coverage
+    artifact, or None when the quotes file matched no venue in policy at all.
+    """
+    venue_name = str(quotes.get("venue", "?"))
+    out = list(venues)
+    notes: list[str] = []
+
+    idx = next((i for i, v in enumerate(out) if v.name == venue_name), None)
+    if idx is None:
+        return out, [f"quotes for {venue_name!r} match no venue in policy — ignored"], None
+
+    meta: dict = {
+        "source": source,
+        "venue": venue_name,
+        "fetched_at": quotes.get("fetched_at"),
+        "age_hours": None,
+        "applied": False,
+        "reason": None,
+    }
+
+    fetched_at = _parse_iso(quotes.get("fetched_at"))
+    if fetched_at is None:
+        meta["reason"] = "quotes file has no readable fetched_at"
+        notes.append(f"{venue_name}: quotes ignored — {meta['reason']}")
+        return out, notes, meta
+
+    age_hours = (now - fetched_at).total_seconds() / 3600.0
+    meta["age_hours"] = round(age_hours, 2)
+    if max_age_hours is not None and age_hours > float(max_age_hours):
+        meta["reason"] = f"stale: {age_hours:.1f}h old, over the {max_age_hours}h policy limit"
+        notes.append(f"{venue_name}: live quotes ignored — {meta['reason']}")
+        return out, notes, meta
+
+    selected = quotes.get("selected")
+    if not selected:
+        meta["reason"] = "no qualifying two-sided quote in the last measurement"
+        notes.append(f"{venue_name}: the last quote run found no qualifying long-dated put")
+        return out, notes, meta
+
+    venue = out[idx]
+    if not isinstance(venue, PutVenue):  # only the put venue carries an overlayable premium
+        meta["reason"] = f"{venue_name}: venue carries no quotable premium"
+        notes.append(f"{venue_name}: quotes ignored — {meta['reason']}")
+        return out, notes, meta
+
+    out[idx] = replace(
+        venue,
+        premium_bps=float(selected["premium_bps"]),
+        tenor_days=int(round(float(selected["tenor_days"]))),
+        note=(f"priced from the live book: {selected['instrument']} ask "
+              f"{selected.get('ask')} @ {quotes.get('fetched_at')}"),
+    )
+    meta.update({
+        "applied": True,
+        "instrument": selected.get("instrument"),
+        "premium_bps": selected.get("premium_bps"),
+        "cost_per_day_bps": selected.get("cost_per_day_bps"),
+        "tenor_days": selected.get("tenor_days"),
+    })
+    notes.append(
+        f"priced from the live book: {selected.get('instrument')} ask {selected.get('ask')} — "
+        f"{selected.get('premium_bps')} bps of protected notional @ {quotes.get('fetched_at')}"
+    )
+    return out, notes, meta
+
+
+def _parse_iso(text: str | None) -> datetime | None:
+    if not text:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(text).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt

@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/pAulseperformance/options/quotes.schema.json",
+  "title": "options quotes artifact",
+  "description": "Measured option quotes from a live venue book, with the timestamp of the measurement. Consumed as DATA (by coverage_cli, by dashboards). A placeholder never belongs here: every number is an observation.",
+  "type": "object",
+  "required": ["schema_version", "produced_by", "venue", "fetched_at", "asset", "spot",
+               "selected", "ladder"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "produced_by": { "type": "string" },
+    "read_only": {
+      "type": "boolean",
+      "description": "Always true. Reading a book is not trading."
+    },
+    "venue": { "type": "string" },
+    "deployment": {
+      "type": "string",
+      "description": "Which deployment of the venue this came from (e.g. 'v2 · Derive Chain')."
+    },
+    "endpoint": { "type": "string" },
+    "asset": { "type": "string" },
+    "fetched_at": { "type": "string", "format": "date-time" },
+    "spot": {
+      "type": "object",
+      "required": ["value", "source"],
+      "properties": {
+        "value": { "type": "number" },
+        "source": { "type": "string" }
+      }
+    },
+    "policy_inputs": {
+      "type": "object",
+      "description": "The policy values the selection used, so a consumer never has to re-derive why this strike."
+    },
+    "selected": {
+      "type": ["object", "null"],
+      "description": "The protective put this venue would sell, per policy. Null when nothing qualified — an unquoted venue says so here, not by a missing field.",
+      "required": ["instrument", "strike", "tenor_days", "premium_bps", "basis"],
+      "properties": {
+        "instrument": { "type": "string" },
+        "strike": { "type": "number" },
+        "expiry": { "type": "string" },
+        "tenor_days": { "type": "number" },
+        "premium_bps": {
+          "type": "number",
+          "description": "The executable ask, in bps of the notional the put protects."
+        },
+        "cost_per_day_bps": { "type": "number" },
+        "ask": { "type": "number" },
+        "ask_size": { "type": "number" },
+        "basis": { "const": "ask" }
+      }
+    },
+    "ladder": {
+      "type": "array",
+      "description": "Every book observed in the scan, not only the selected one — the evidence a human re-judges the selection on."
+    },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  }
+}

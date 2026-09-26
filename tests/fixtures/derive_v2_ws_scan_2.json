@@ -1,0 +1,258 @@
+{
+  "fetched_at": "2026-09-26T12:05:43.606Z",
+  "ws": "wss://api.lyra.finance/ws",
+  "spot": 2688.72,
+  "rows": [
+    {
+      "instrument": "ETH-PERP",
+      "bid": "2688.7",
+      "bid_size": "20.822",
+      "ask": "2688.74",
+      "ask_size": "1.859",
+      "n_bids": 10,
+      "n_asks": 10
+    },
+    {
+      "instrument": "ETH-20270326-1800-P",
+      "bid": "67.5",
+      "bid_size": "13.4",
+      "ask": "77.4",
+      "ask_size": "13.4",
+      "n_bids": 1,
+      "n_asks": 3,
+      "premium_bps_ask": 287.87,
+      "mid": 72.45,
+      "premium_bps_mid": 269.46
+    },
+    {
+      "instrument": "ETH-20270326-2000-P",
+      "bid": "105.3",
+      "bid_size": "13.4",
+      "ask": "116.2",
+      "ask_size": "13.4",
+      "n_bids": 1,
+      "n_asks": 3,
+      "premium_bps_ask": 432.18,
+      "mid": 110.75,
+      "premium_bps_mid": 411.91
+    },
+    {
+      "instrument": "ETH-20270326-2200-P",
+      "bid": "158.6",
+      "bid_size": "13.4",
+      "ask": "170.8",
+      "ask_size": "13.4",
+      "n_bids": 1,
+      "n_asks": 1,
+      "premium_bps_ask": 635.25,
+      "mid": 164.7,
+      "premium_bps_mid": 612.56
+    },
+    {
+      "instrument": "ETH-20270326-2400-P",
+      "bid": "229.9",
+      "bid_size": "13.4",
+      "ask": "243.6",
+      "ask_size": "13.4",
+      "n_bids": 1,
+      "n_asks": 1,
+      "premium_bps_ask": 906.01,
+      "mid": 236.75,
+      "premium_bps_mid": 880.53
+    },
+    {
+      "instrument": "ETH-20270326-2500-P",
+      "bid": "272.7",
+      "bid_size": "13.4",
+      "ask": "287",
+      "ask_size": "13.4",
+      "n_bids": 1,
+      "n_asks": 1,
+      "premium_bps_ask": 1067.42,
+      "mid": 279.85,
+      "premium_bps_mid": 1040.83
+    },
+    {
+      "instrument": "ETH-20270326-2600-P",
+      "bid": "320.3",
+      "bid_size": "13.4",
+      "ask": "335.2",
+      "ask_size": "13.4",
+      "n_bids": 1,
+      "n_asks": 1,
+      "premium_bps_ask": 1246.69,
+      "mid": 327.75,
+      "premium_bps_mid": 1218.98
+    },
+    {
+      "instrument": "ETH-20270326-2800-P",
+      "bid": "428.7",
+      "bid_size": "13.4",
+      "ask": "444.8",
+      "ask_size": "13.4",
+      "n_bids": 1,
+      "n_asks": 1,
+      "premium_bps_ask": 1654.32,
+      "mid": 436.75,
+      "premium_bps_mid": 1624.38
+    },
+    {
+      "instrument": "ETH-20270326-3000-P",
+      "bid": "553.3",
+      "bid_size": "13.4",
+      "ask": "570.3",
+      "ask_size": "13.4",
+      "n_bids": 1,
+      "n_asks": 1,
+      "premium_bps_ask": 2121.08,
+      "mid": 561.8,
+      "premium_bps_mid": 2089.47
+    },
+    {
+      "instrument": "ETH-20270625-1800-P",
+      "bid": null,
+      "bid_size": null,
+      "ask": null,
+      "ask_size": null,
+      "n_bids": 0,
+      "n_asks": 0
+    },
+    {
+      "instrument": "ETH-20270625-2000-P",
+      "bid": null,
+      "bid_size": null,
+      "ask": null,
+      "ask_size": null,
+      "n_bids": 0,
+      "n_asks": 0
+    },
+    {
+      "instrument": "ETH-20270625-2200-P",
+      "bid": null,
+      "bid_size": null,
+      "ask": null,
+      "ask_size": null,
+      "n_bids": 0,
+      "n_asks": 0
+    },
+    {
+      "instrument": "ETH-20270625-2400-P",
+      "bid": null,
+      "bid_size": null,
+      "ask": null,
+      "ask_size": null,
+      "n_bids": 0,
+      "n_asks": 0
+    },
+    {
+      "instrument": "ETH-20270625-2500-P",
+      "bid": null,
+      "bid_size": null,
+      "ask": "345",
+      "ask_size": "0.01",
+      "n_bids": 0,
+      "n_asks": 1,
+      "premium_bps_ask": 1283.14,
+      "mid": null
+    },
+    {
+      "instrument": "ETH-20270625-2600-P",
+      "bid": null,
+      "bid_size": null,
+      "ask": null,
+      "ask_size": null,
+      "n_bids": 0,
+      "n_asks": 0
+    },
+    {
+      "instrument": "ETH-20270625-2800-P",
+      "bid": null,
+      "bid_size": null,
+      "ask": null,
+      "ask_size": null,
+      "n_bids": 0,
+      "n_asks": 0
+    },
+    {
+      "instrument": "ETH-20270625-3000-P",
+      "bid": null,
+      "bid_size": null,
+      "ask": null,
+      "ask_size": null,
+      "n_bids": 0,
+      "n_asks": 0
+    },
+    {
+      "instrument": "ETH-20270924-1800-P",
+      "bid": null,
+      "bid_size": null,
+      "ask": null,
+      "ask_size": null,
+      "n_bids": 0,
+      "n_asks": 0
+    },
+    {
+      "instrument": "ETH-20270924-2000-P",
+      "bid": null,
+      "bid_size": null,
+      "ask": null,
+      "ask_size": null,
+      "n_bids": 0,
+      "n_asks": 0
+    },
+    {
+      "instrument": "ETH-20270924-2200-P",
+      "bid": null,
+      "bid_size": null,
+      "ask": null,
+      "ask_size": null,
+      "n_bids": 0,
+      "n_asks": 0
+    },
+    {
+      "instrument": "ETH-20270924-2400-P",
+      "bid": null,
+      "bid_size": null,
+      "ask": null,
+      "ask_size": null,
+      "n_bids": 0,
+      "n_asks": 0
+    },
+    {
+      "instrument": "ETH-20270924-2500-P",
+      "bid": null,
+      "bid_size": null,
+      "ask": null,
+      "ask_size": null,
+      "n_bids": 0,
+      "n_asks": 0
+    },
+    {
+      "instrument": "ETH-20270924-2600-P",
+      "bid": null,
+      "bid_size": null,
+      "ask": null,
+      "ask_size": null,
+      "n_bids": 0,
+      "n_asks": 0
+    },
+    {
+      "instrument": "ETH-20270924-2800-P",
+      "bid": null,
+      "bid_size": null,
+      "ask": null,
+      "ask_size": null,
+      "n_bids": 0,
+      "n_asks": 0
+    },
+    {
+      "instrument": "ETH-20270924-3000-P",
+      "bid": null,
+      "bid_size": null,
+      "ask": null,
+      "ask_size": null,
+      "n_bids": 0,
+      "n_asks": 0
+    }
+  ]
+}

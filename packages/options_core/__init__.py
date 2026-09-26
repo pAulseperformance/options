@@ -5,10 +5,10 @@ at what cost — and when the answer is none, it says why.
 """
 from .costs import (BPS, bps_of, cost_per_day_bps, premium_as_pct, put_premium_bps)
 from .decide import HedgeLeg, HedgePlan, plan_hedge
-from .mechanisms import Availability, Mechanism, PutVenue, build_mechanisms
+from .mechanisms import Availability, Mechanism, PutVenue, build_mechanisms, overlay_quotes
 
 __all__ = [
     "BPS", "bps_of", "cost_per_day_bps", "premium_as_pct", "put_premium_bps",
     "HedgeLeg", "HedgePlan", "plan_hedge",
-    "Availability", "Mechanism", "PutVenue", "build_mechanisms",
+    "Availability", "Mechanism", "PutVenue", "build_mechanisms", "overlay_quotes",
 ]

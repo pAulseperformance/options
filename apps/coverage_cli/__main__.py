@@ -2,21 +2,24 @@
 
 Read-only. Produces data/coverage.json, the artifact other projects consume.
 
-Exposure is an INPUT, not a fetch. Your positions live across several accounts (spot and margin)
-and the authoritative number is whichever one you point at this; a decision layer that goes and
-fetches its own inputs is a decision layer that cannot be tested.
+Exposure is an INPUT, not a fetch — and so are quotes. `--quotes` points at a measurement from
+the venue adapter (apps/derive_quotes -> data/quotes.json); while that measurement is fresh it
+prices the plan, and when it is stale or missing the venue simply stays unquoted. A decision
+layer that fetches its own inputs is a decision layer that cannot be tested.
 """
 from __future__ import annotations
 
 import argparse
 import json
 import sys
+from dataclasses import replace
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "packages"))  # apps may import packages (rule 1)
 
-from options_core import build_mechanisms, plan_hedge  # noqa: E402
+from options_core import build_mechanisms, overlay_quotes, plan_hedge  # noqa: E402
 
 SCHEMA_VERSION = 1
 
@@ -44,18 +47,38 @@ def main(argv: list[str] | None = None) -> int:
                     help="what this exposure is (e.g. 'spot ETH', 'margin BTC'), recorded")
     ap.add_argument("--burned-off", action="store_true",
                     help="a policy trigger fires; the correct amount of insurance is zero")
+    ap.add_argument("--quotes", default=None,
+                    help="path to a quotes artifact (data/quotes.json): real premiums, used "
+                         "only while fresh per policy's quotes_max_age_hours")
     ap.add_argument("--write", default=None, help="path to write coverage.json")
     ap.add_argument("--json", action="store_true", help="print the artifact to stdout")
     args = ap.parse_args(argv)
 
     policy = load_policy(Path(args.policy))
     mechanisms = build_mechanisms(policy)
+
+    quotes_meta = None
+    overlay_notes: list[str] = []
+    if args.quotes:
+        try:
+            quotes = json.loads(Path(args.quotes).read_text())
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"could not read quotes file {args.quotes!r}: {exc}", file=sys.stderr)
+            return 2
+        mechanisms, overlay_notes, quotes_meta = overlay_quotes(
+            mechanisms, quotes, source=args.quotes,
+            max_age_hours=policy.get("quotes_max_age_hours", 24),
+            now=datetime.now(timezone.utc),
+        )
+
     plan = plan_hedge(
         exposure_usd=args.exposure_usd,
         policy=policy,
         mechanisms=mechanisms,
         burned_off=args.burned_off,
     )
+    if overlay_notes:
+        plan = replace(plan, notes=list(plan.notes) + overlay_notes)
 
     artifact = {
         "schema_version": SCHEMA_VERSION,
@@ -68,10 +91,14 @@ def main(argv: list[str] | None = None) -> int:
         "policy": {
             "target_ratio": policy.get("target_ratio"),
             "min_tenor_days": policy.get("min_tenor_days"),
+            "strike_otm_pct": policy.get("strike_otm_pct"),
             "max_premium_bps": policy.get("max_premium_bps"),
+            "quotes_max_age_hours": policy.get("quotes_max_age_hours"),
         },
         "plan": plan.as_dict(),
     }
+    if quotes_meta is not None:
+        artifact["quotes"] = quotes_meta
 
     if args.write:
         out = Path(args.write)

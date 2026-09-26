@@ -5,27 +5,43 @@
 
 target_ratio: 0.50          # share of exposure to insure
 
+# The protective puts are written on this underlying.
+asset: ETH
+
 # Cover must outlast the position it protects. This is what rules out rolling short-dated puts:
 # they are cheaper per contract and far more expensive per day of cover, and they leave the gap
 # you most need closed — the one between expiries.
 min_tenor_days: 180
 
+# The put's strike sits this far below spot: you keep the first 10% of a drawdown, the put covers
+# the rest. A level you are choosing, not a price the market sets — change it deliberately.
+strike_otm_pct: 10.0
+
 # Refuse if the cheapest insurance costs more than this share of the protected notional.
 # 1200 bps = 12%. Moving this is a real risk decision; make it deliberately.
 max_premium_bps: 1200
+
+# A quote is a measurement, not a permanent fact. Older than this and the plan treats the venue
+# as unquoted again rather than pricing off a stale book.
+quotes_max_age_hours: 24
 
 # Recorded on every plan so a consumer never has to re-derive why the number is what it is.
 triggers:
   - "insurance is bought against a thesis, not a price: re-evaluate when the position it protects is closed"
 
 venues:
-  # Primary candidate. Gate stays closed until ops/derive_book_probe.mjs shows a non-empty book.
+  # LIVE — the v2 deployment on Derive Chain (api.lyra.finance), verified trading 2026-09-26:
+  # ETH-PERP trades settle on-chain continuously and the 181d put ladder (strikes 1800–3000) is
+  # quoted two-sided. The 272d/363d series were EMPTY. Premiums are measured by
+  # `apps/derive_quotes` -> data/quotes.json; the 0.0 below is a placeholder and never wins.
+  # v3 (api.derive.xyz) is the pre-launch zk stack — NOT listed until its production book fills;
+  # re-check with ops/derive_book_probe.mjs (the v3 gate, testnet as positive control).
   - kind: put_venue
     venue: derive
-    live: false
-    note: "V3 mainnet pre-launch: production orderbook verified empty on 2026-09-26"
-    premium_bps: 0.0        # MUST come from a real quote. Never guessed.
-    tenor_days: 270         # Derive lists 181 / 272 / 363d quarterlies
+    live: true
+    note: "v2 live on Derive Chain; 181d puts quoted two-sided (2026-09-26)"
+    premium_bps: 0.0        # MUST come from a real quote — filled by apps/derive_quotes
+    tenor_days: 181         # the only long-dated series actually quoted as of 2026-09-26
 
   # Expected later. Not listed yet — no instrument, no quote, nothing to cost.
   - kind: put_venue

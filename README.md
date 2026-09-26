@@ -18,27 +18,34 @@ The hard part is not placing the order. It is **deciding how much cover, on whic
 tenor, at what price — and knowing when not to buy.** That decision is venue-independent, so it
 lives here, and venue-specific execution lands as an adapter when a venue actually exists.
 
-**As of 2026-09-26 no venue can execute this.** Derive V3 mainnet is pre-launch with a
-verified-empty production orderbook (testnet has a book; production does not — see
-`ops/derive_book_probe.mjs`). Lighter options do not exist yet. Deribit is a **data source** for
-gamma walls, not a venue.
+**The venue exists.** Derive's **v2** deployment — `api.lyra.finance` on Derive Chain — is live
+and trading (verified 2026-09-26: ETH-PERP trades settling on-chain every few minutes, and the
+181-day put ladder quoted two-sided). `apps/derive_quotes` reads that book (public, read-only)
+and publishes `data/quotes.json`; `coverage_cli --quotes` prices the plan from it. Derive **v3**
+(`api.derive.xyz`) is a pre-launch zk stack with a verified-empty production orderbook — not
+listed until it trades (`ops/derive_book_probe.mjs` is the v3 gate). Lighter options do not exist
+yet. Deribit remains a **data source** for gamma walls, not a venue.
 
-So this repo ships the part that is true regardless: the policy, the cost comparison, and the plan.
+So this repo ships the decision, the measurement, and the plan — and never the order.
 
 ## Layout
 
 ```
-packages/options_contracts/  coverage.schema.json — the "lego studs"; consumers read this
-packages/options_core/       the decision engine (costs, venues, plan)
+packages/options_contracts/  coverage.schema.json + quotes.schema.json — the "lego studs"
+packages/options_core/       the decision engine (costs, venues, plan, quote overlay)
 apps/coverage_cli/           asks "what should the insurance be?" and publishes data/coverage.json
+apps/derive_quotes/          reads the live Derive v2 book, read-only -> data/quotes.json
 config/policy.yml            every number is a config value, not a constant
 data/coverage.json           the published artifact other tools consume
-ops/derive_book_probe.mjs    the venue gate — 12s, no credentials
-tests/                       the decision rules, incl. the import-boundary guard
+data/quotes.json             the measurement it is priced from
+ops/derive_book_probe.mjs    the v3 venue gate — 12s, no credentials
+tests/                       the decision rules and the quote rules, incl. the import-boundary guard
 ```
 
-There are deliberately **no venue adapters yet.** An adapter that cannot execute is scaffolding,
-and scaffolding reads as progress.
+The first venue adapter is `apps/derive_quotes` — and it exists only because the venue does: it
+reads a public book and publishes measurements (`data/quotes.json`). It places nothing; buying
+stays a human action. An adapter that cannot execute is scaffolding, and scaffolding reads as
+progress — so there is still exactly one.
 
 ## The one rule that matters
 
@@ -54,6 +61,8 @@ Two supporting rules, both enforced by tests:
   before it can be selected.
 - **Live but unquoted is still unavailable.** A `premium_bps` of `0.0` placeholder must never win a
   cheapest-venue comparison it did not earn.
+- **A measurement expires.** Quotes older than `quotes_max_age_hours` are ignored and the venue
+  returns to "unquoted" — a plan is never priced off a stale book.
 
 ## Rules (enforced by `tests/test_import_boundaries.py`)
 
@@ -66,16 +75,22 @@ Copied deliberately from `lighter-core`, which learned them the hard way.
 ## Running
 
 ```sh
+# 1. measure the live book (public, read-only — writes data/quotes.json)
+PYTHONPATH=apps uv run --with websockets --with pyyaml --no-project python -m derive_quotes
+
+# 2. decide, priced by that measurement
 PYTHONPATH=apps uv run --with pyyaml --no-project python -m coverage_cli \
-    --policy config/policy.yml --exposure-usd 4860 --label "spot ETH" \
+    --policy config/policy.yml --quotes data/quotes.json \
+    --exposure-usd 4860 --label "spot + margin, all accounts" \
     --write data/coverage.json
 
-uv run --with pytest --with pyyaml --no-project python -m pytest tests/ -q
+uv run --with pytest --with pyyaml --with jsonschema --no-project python -m pytest tests/ -q
 ```
 
 ## Consuming this
 
-Read `data/coverage.json`. Do not import this repo's code.
+Read `data/coverage.json` (the decision) and `data/quotes.json` (the measurement behind it).
+Do not import this repo's code.
 
 Integration points, in the order they are worth doing:
 
@@ -85,9 +100,13 @@ Integration points, in the order they are worth doing:
 2. **Scanners / research pipelines** — read the artifact for context ("what is currently insured")
    instead of re-deriving it.
 
-## What still has to be filled in by hand
+## What is still open
 
-`premium_bps` on every venue is `0.0` and `tenor_days` is a guess at the quarterly ladder. Both are
-**placeholders, not measurements**, and the second is only harmless because the first keeps every
-venue gated off. They must come from a real quote before any plan is acted on. This is flagged in
-HANDOFF.md next to the gate.
+- **Execution is unexercised.** The venue is live and quoted; this repo has never placed an order
+  (by design — no keys). Buying the put is a human action on the venue's own interface.
+- **Only the 181d series is quoted.** 272d and 363d were empty at measurement; the adapter
+  re-measures each run, so the tenor follows the book rather than a guess.
+- **v3 re-gate.** When Derive v3 mainnet launches, re-run `ops/derive_book_probe.mjs`; a non-empty
+  production book is the trigger to re-point the adapter.
+- `premium_bps` in policy stays `0.0` **on purpose**: it keeps a venue unquoted unless
+  `data/quotes.json` is fresh. Never put a guessed premium there.
