@@ -60,7 +60,9 @@ and the point of the design.
 
 1. **Re-measure before acting on any plan:** `PYTHONPATH=apps uv run --with websockets --with
    pyyaml --no-project python -m derive_quotes`, then run coverage with `--quotes data/quotes.json`.
-2. **Rail the dashboard** on `data/coverage.json` (integration point #1 in the README).
+2. **Rail the dashboard** — DONE (2026-09-26): *Options Insurance* card + `GET /api/options-coverage`
+   (`options.coverage.view/1`) on the trading dashboard read `data/coverage.json`; the card says
+   EXPIRED past the quote window and never executes.
 3. **Re-run the v3 venue gate** (`ops/derive_book_probe.mjs`) when Derive announces v3 mainnet.
 4. **Keep pushing:** remote `origin` = `pAulseperformance/options` (exists — verified 2026-09-26);
    push `main` after each session. A local-only commit is not a backup.
@@ -123,3 +125,9 @@ Measured board (2026-09-26 12:03–12:06 UTC, spot ≈ 2689; ask = what a buyer 
 coverage awaits a quoted book — the adapter re-measures rather than guessing. v3 stays unlisted;
 when its mainnet launches, `ops/derive_book_probe.mjs` is the gate and re-pointing `ENDPOINTS` in
 `apps/derive_quotes/__main__.py` is the adapter change.
+
+**Railed (same session, second pass):** the trading dashboard now reads this artifact as its own
+contract — `GET /api/options-coverage` (`options.coverage.view/1`) + an *Options Insurance* card
+(coverage %, dollars uninsured, the measured instrument, the notes; EXPIRED past the quote window).
+Dashboard tests 262 green (10 new), the card SSR-verified in all four states, live at
+`http://100.108.43.24:8899` since 2026-09-26 ~13:05 UTC.

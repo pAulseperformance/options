@@ -94,9 +94,13 @@ Do not import this repo's code.
 
 Integration points, in the order they are worth doing:
 
-1. **Trading dashboard** — render `plan.coverage_pct`, `plan.uncovered_usd` and the `notes`. The
-   notes are the honest part: they say *why* cover is missing, which is more useful on a dashboard
-   than insurance that silently does not exist.
+1. **Trading dashboard** — DONE (2026-09-26): the dashboard's *Options Insurance* card renders
+   `plan.coverage_pct`, `plan.uncovered_usd`, the measured instrument and the `notes`, served at
+   `GET /api/options-coverage` (contract `options.coverage.view/1`) straight from this artifact —
+   own endpoint, freshness window taken from this repo's own `quotes_max_age_hours`, and the
+   pricing marked **EXPIRED** past it rather than shown as live cover. The notes are the honest
+   part: they say *why* cover is missing, which is more useful on a dashboard than insurance that
+   silently does not exist.
 2. **Scanners / research pipelines** — read the artifact for context ("what is currently insured")
    instead of re-deriving it.
 
