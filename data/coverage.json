@@ -36,7 +36,7 @@
   "quotes": {
     "source": "data/quotes.json",
     "venue": "derive",
-    "fetched_at": "2026-09-27T08:38:27.258803Z",
+    "fetched_at": "2026-09-27T16:25:36.036642Z",
     "age_hours": 0.0,
     "applied": false,
     "reason": "no qualifying two-sided quote in the last measurement"

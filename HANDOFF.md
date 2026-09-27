@@ -195,4 +195,6 @@ mid-October (vote close + ≥14-day notice). The 30-min book watch doubles as th
 when V2 winds down. Also checked for completeness: **no "V4" exists** (docs full-text, forum
 search, news — 2026-09-27); "V3" is the live upgrade, "HIP-4" is Hyperliquid's thing.
 New watch: `ops/v3_watch.py` (cron "Derive V3 Watch", daily 9:05) pings on vote close, migration
-notice, or the v3 API answering.
+notice, or the v3 API answering. (The book watch rewrites `data/quotes.json` +
+`data/coverage.json` every 30 min — those two files showing as modified in `git status` between
+sessions is expected, not drift.)
