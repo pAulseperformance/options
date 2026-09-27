@@ -10,3 +10,4 @@ __pycache__/
 # Runtime watch dedupe state (not history)
 data/book_watch_state.json
 data/hl_watch_state.json
+data/v3_watch_state.json

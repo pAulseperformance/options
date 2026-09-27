@@ -121,10 +121,47 @@ For comparison: L2BEAT at least grades Lighter as a Stage 0 appchain; Derive's p
 not even a Stage 0 project". Neither is somewhere to park size; both are fine for what they're
 being used for at small size.
 
+## V3 supersedes this page (vote live, checked 2026-09-27)
+
+The fix for everything above landed on the governance calendar while this dossier was written:
+**"DIP: Launch Derive V3"** (forum 2026-09-14, by domrom) went to a **live Snapshot vote** on
+2026-09-24 — open until **2026-10-04 01:40 UTC**, currently **99.2% For** (79.3M vs 0.65M DRV;
+11 voters; no quorum set). V3 replaces the architecture this page is about:
+
+- **Custody moves into Ethereum L1 contracts** — "User funds are escrowed in the L1 protocol smart
+  contracts, that can only be redeemed given a proof-committed withdrawal digest. No operator,
+  sequencer or prover key can move a token."
+- **Every state transition is ZK-proven and verified on L1** (zkVM; flat ~400–500k gas per batch,
+  whatever its size). Stated goal: "L2Beat Stage 1 classification."
+- **Escape hatch replaces the forced-inclusion story:** the sequencer must process the L1 action
+  queue in order ("a sequencer cannot process any deposits unless requested withdrawals are first
+  processed"); withdrawals must be processed within a minimum period ("in the beginning set to 2
+  weeks"), after which "anyone can permissionlessly take over the sequencer and propose new
+  batches" (exchange binary published publicly shortly after launch).
+- **Remaining powers, named:** owner multisig (Derive Subsidiary BVI Ltd — "timelock protections
+  and a 6-of-8 bypass") can update state root / verifying key / proxies and unpause withdrawals;
+  a guardian can refresh withdrawal throttles or flip a one-way withdrawal block. Ownership is to
+  move to stDRV governance via a follow-up proposal.
+- **Migration is automatic — not a redeposit:** V2 snapshot → V3 genesis; "Users arrive in V3 with
+  their balances, positions, ownership and session keys already in place"; Derive Chain is scraped
+  and wound down. Sequence: ≥14 days' notice → bridges freeze (T−4h) → trading halt (T−5min) →
+  genesis root on L1 → trading resumes (withdrawals staged over hours → up to a week). Trigger/TWAP
+  orders reset; positions survive; **ETH options stay** (Prime risk universe: ETH, BTC).
+- **Deposits move to Ethereum L1** — the "bridge to a small chain" step disappears entirely.
+- US-person exclusion persists ("The Derive Exchange API and Application will continue not to be
+  available to US persons").
+
+**Consequence:** the sizing rule above was calibrated to V2. Once V3 is live, re-run this diligence
+against the new model — L1 custody + validity proofs + a permissionless takeover path is a
+different league from "not even Stage 0" — and port the quotes adapter per
+`docs.derive.xyz/migrating/breaking-changes.md`.
+
 ## Re-check triggers
 
-- Derive v3 mainnet launch — v3 moves deposits/withdrawals to **Ethereum L1** (docs: withdraw to
-  "an L1 recipient address"), which removes most of this layer; re-run this diligence at migration.
+- **Derive V3 launch — scheduled now, not hypothetical.** Vote active 2026-09-24 → 2026-10-04
+  (~99% For at reading); on approval: ≥14-day notice, then automatic migration. Re-run this
+  diligence at migration (section above), then port the reader at `api.derive.xyz/v3`
+  (`docs.derive.xyz/migrating/breaking-changes.md`; port notes in the derive-platform skill).
 - Any L2BEAT status change (Stage, disputes, DA) — the page is versioned (last config update seen
   2026-08-27).
 - Before any funding above insurance size.

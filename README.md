@@ -128,6 +128,8 @@ data is on Celestia with no DA bridge, and proposers/challengers are permissione
 block states keep the **withdraw route open** even for restricted/compliance-blocked accounts, and
 the chain's forced-inclusion path lets a censored user exit via Ethereum L1 (≤12h to force, then
 ~3.5–7d to claim). Sizing rule: premium + small buffer only — never park size on Derive Chain.
+**Update 2026-09-27:** the V2→V3 upgrade is now at a **live vote** (closes Oct 4) — V3 moves
+custody to Ethereum L1 contracts and supersedes most of this analysis; see §V3 in the dossier.
 
 ## What is still open
 
@@ -143,7 +145,9 @@ the chain's forced-inclusion path lets a censored user exit via Ethereum L1 (≤
   (16 strikes two-sided) and empty two-sided by 13:53 UTC the same day (the maker left; the perp
   kept trading). Re-measure at action time — the plan publishes "no venue available" itself when
   the book is gone, which is the honest answer.
-- **v3 re-gate.** When Derive v3 mainnet launches, re-run `ops/derive_book_probe.mjs`; a non-empty
-  production book is the trigger to re-point the adapter.
+- **v3 re-gate — now an event with a calendar.** The "DIP: Launch Derive V3" Snapshot vote is live
+  (2026-09-24 → Oct 4, ~99% For); on approval: ≥14-day notice, then automatic V2→V3 migration and
+  Derive Chain wind-down (deposits move to Ethereum L1). Re-run `ops/derive_book_probe.mjs` and
+  port the adapter at launch — a non-empty production book is the trigger to re-point.
 - `premium_bps` in policy stays `0.0` **on purpose**: it keeps a venue unquoted unless
   `data/quotes.json` is fresh. Never put a guessed premium there.

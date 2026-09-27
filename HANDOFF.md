@@ -13,9 +13,9 @@ published and real; `data/quotes.json` is the measurement behind it (from `apps/
 
 **The venue exists:** Derive **v2** (`api.lyra.finance`, Derive Chain) trades live today —
 ETH-PERP settles continuously on-chain and the 181d put ladder is quoted two-sided. Derive **v3**
-(`api.derive.xyz`) is the pre-launch zk stack with an empty production book; it stays unlisted
-until it trades. Without fresh quotes the plan still reports **no venue available** — correct,
-and the point of the design.
+(`api.derive.xyz`) is the zkVM-on-L1 successor — production book still empty, **launch vote live
+until Oct 4** (see tail); it stays unlisted until it trades. Without fresh quotes the plan still
+reports **no venue available** — correct, and the point of the design.
 
 ## Decisions already made (do not re-derive)
 
@@ -52,9 +52,11 @@ and the point of the design.
   and never trades, by design. Buying the put is a human action on the venue's own interface.
 - **Only the 181d series is quoted** (272d and 363d empty at measurement, 2026-09-26). Re-run the
   adapter before acting on any plan; it re-measures rather than assumes.
-- **Derive v3 is pre-launch.** Production orderbook verified empty on 2026-09-26 (testnet has a
-  book as positive control). Re-check with `ops/derive_book_probe.mjs`. **A non-empty production
-  book is the trigger to re-point the adapter at v3.**
+- **Derive v3 is at vote stage, not launched.** Production orderbook was empty at last probe
+  (2026-09-26; testnet has a book as positive control), and the "DIP: Launch Derive V3" Snapshot
+  vote is live (2026-09-24 → Oct 4, ~99% For at reading). On approval: ≥14-day notice, then
+  automatic V2→V3 migration + Derive Chain wind-down. Re-check with `ops/derive_book_probe.mjs`.
+  **A non-empty production book is the trigger to re-point the adapter at v3.**
 
 ## Open items
 
@@ -179,3 +181,18 @@ parked size; the ETH stays on L1.** ToS: US/AU/Ontario excluded; the anonymity-t
 broad ("VPN, proxy ... privacy tool, anonymisation tool or technique") but the documented
 enforcement surface is region detection (IP), wallet screening (OFAC), and manual compliance — no
 VPN-specific enforcement record found; Paul Mendes is not a US person (2026-09-27).
+
+**V3 vote is live (checked 2026-09-27) — the upgrade this repo has been waiting for has a date.**
+"DIP: Launch Derive V3" (forum 2026-09-14) went to Snapshot (`derivexyz.eth`) on 2026-09-24, open
+until **Oct 4 01:40 UTC**, running **99.2% For** (79.3M vs 0.65M DRV; 11 voters). V3 = the zkVM
+exchange: funds escrowed in **Ethereum L1 contracts**, every batch proof-verified on L1, an escape
+hatch (ordered forced processing → 2-week processing duty → permissionless sequencer takeover),
+L2Beat Stage 1 as the stated goal. Migration is **automatic** (V2 snapshot → genesis; no redeposit;
+positions and session keys carry; trigger/TWAP orders reset; Derive Chain wound down); **deposits
+become Ethereum L1** — the "fund a small chain" step disappears, superseding `docs/venue-risk.md`'s
+chain analysis (§V3) and softening the sizing rule for post-V3 funding. Earliest migration:
+mid-October (vote close + ≥14-day notice). The 30-min book watch doubles as the venue-down alarm
+when V2 winds down. Also checked for completeness: **no "V4" exists** (docs full-text, forum
+search, news — 2026-09-27); "V3" is the live upgrade, "HIP-4" is Hyperliquid's thing.
+New watch: `ops/v3_watch.py` (cron "Derive V3 Watch", daily 9:05) pings on vote close, migration
+notice, or the v3 API answering.
