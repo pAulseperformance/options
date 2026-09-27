@@ -6,3 +6,7 @@ __pycache__/
 # Agent task workspaces check out this repo as git worktrees here; they must never be
 # staged into main (a nested checkout, .git file and all).
 .worktrees/
+
+# Runtime watch dedupe state (not history)
+data/book_watch_state.json
+data/hl_watch_state.json
