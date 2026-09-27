@@ -119,6 +119,16 @@ Integration points, in the order they are worth doing:
 2. **Scanners / research pipelines** — read the artifact for context ("what is currently insured")
    instead of re-deriving it.
 
+## Venue risk
+
+Derive Chain is OP-stack with a centralized operator. Before any funding, read
+`docs/venue-risk.md` (checked 2026-09-27): L2BEAT rates the chain *below Stage 0* — the fault-proof
+system is deployed but not functional, upgrades are instant with no exit window (CRITICALs),
+data is on Celestia with no DA bridge, and proposers/challengers are permissioned. The venue's own
+block states keep the **withdraw route open** even for restricted/compliance-blocked accounts, and
+the chain's forced-inclusion path lets a censored user exit via Ethereum L1 (≤12h to force, then
+~3.5–7d to claim). Sizing rule: premium + small buffer only — never park size on Derive Chain.
+
 ## What is still open
 
 - **Positions are as wide as the reader.** It covers the L1 wallet + both Lighter accounts today.

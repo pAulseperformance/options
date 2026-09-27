@@ -160,4 +160,22 @@ options + 282 dashboard; live + verified 2026-09-27 ~08:55 UTC.
 pays out continuously — an exchange/bridge sweep pattern; not traced further on purpose).
 `0x10362f47ffb1f2e18db580e8d8a6f355002898093a856f41d7e77bd150e45584` is the hop out of the
 tracked wallet. Whether that money is "sold", "parked elsewhere", or "should be tracked" is a
-question for Paul — the reader follows the accounts it is given, and nothing else.
+question for Paul Mendes — the reader follows the accounts it is given, and nothing else.
+
+**Venue-risk diligence (2026-09-27): `docs/venue-risk.md`.** The question was "can funds come off
+Derive Chain if an account gets banned?" — answer: yes at three layers, each with a named caveat.
+(1) *Venue:* compliance/region blocks are documented API states (error codes 16000/16001/16002)
+and the region block explicitly keeps the withdraw route open — "You may withdraw funds any time
+but deposits, transfers, orders are blocked" [16000]. (2) *Chain:* OP-stack forced inclusion lets
+any transaction (including initiating a withdrawal) be pushed through Ethereum L1 — "up to a 12h
+delay" — and a normal exit (initiate on L2, prove, claim on L1) lands after the challenge period
+(≥3d12h; budget ~a week). (3) *Residual:* L2BEAT says Derive Chain "is not even a Stage 0
+project" — the fault-proof system is deployed but NOT functional (dispute game commits to an
+op-program release predating the Jovian hardfork), contracts are instantly upgradable with no exit
+window (CRITICAL), DA is Celestia with no DA bridge (CRITICAL), proposers/challengers are
+permissioned (one entity), and a Conduit 4-of-11 multisig can upgrade everything with no delay and
+pause withdrawals. **Sizing rule adopted: money on Derive Chain = premium + buffer only, never
+parked size; the ETH stays on L1.** ToS: US/AU/Ontario excluded; the anonymity-tool clause is
+broad ("VPN, proxy ... privacy tool, anonymisation tool or technique") but the documented
+enforcement surface is region detection (IP), wallet screening (OFAC), and manual compliance — no
+VPN-specific enforcement record found; Paul Mendes is not a US person (2026-09-27).
