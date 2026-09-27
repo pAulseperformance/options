@@ -143,3 +143,21 @@ republished as **NO VENUE AVAILABLE — uninsured**, reason attached:
 measure at action time, and buying is possible only while the maker is quoting. (The 12:15 "covered"
 artifact stays in history as exactly the kind of confident-but-gone quote this repo exists to
 catch.)
+
+**Measured positions + the portfolio rail (2026-09-27).** `apps/portfolio_reader` publishes
+`data/portfolio.json` from the real accounts — L1 balances via a public RPC, Lighter via the
+official SDK against both deployments — read-only, public data only. The artifact keeps two
+numbers apart on purpose: `totals` = what the portfolio is worth ($2,493.91 across L1 $247.56 +
+Lighter mainnet $1,104.25 + RH $1,142.10), `exposure` = what a drop reaches ($247.83 — net ETH;
+the LIT ±1.57 and CASHCAT ±308.4 cross-venue pairs net to 0 and are excluded, each with a note
+naming both legs). `coverage_cli --portfolio` now sizes the plan from it (`subject.source` records
+the provenance); an incomplete artifact is refused, never priced. Dashboard: the *Portfolio* card
++ `/portfolio` page read both artifacts as `portfolio.view/1` (`GET /api/portfolio`) — the
+coverage-only card was superseded and removed; `/api/options-coverage` still stands. Tests: 60
+options + 282 dashboard; live + verified 2026-09-27 ~08:55 UTC.
+**The wallet moved while this was being built:** the tracked L1 wallet went 1.8011 → 0.0911 ETH on
+2026-09-26 18:47 UTC (1.71 ETH → two relay wallets → a service hot wallet holding 11k+ ETH that
+pays out continuously — an exchange/bridge sweep pattern; not traced further on purpose).
+`0x10362f47ffb1f2e18db580e8d8a6f355002898093a856f41d7e77bd150e45584` is the hop out of the
+tracked wallet. Whether that money is "sold", "parked elsewhere", or "should be tracked" is a
+question for Paul — the reader follows the accounts it is given, and nothing else.

@@ -26,6 +26,13 @@ def test_published_coverage_artifact_matches_its_schema():
     jsonschema.validate(artifact, schema)
 
 
+def test_published_portfolio_artifact_matches_its_schema():
+    schema = json.loads((ROOT / "packages" / "options_contracts" / "portfolio.schema.json")
+                        .read_text())
+    artifact = json.loads((ROOT / "data" / "portfolio.json").read_text())
+    jsonschema.validate(artifact, schema)
+
+
 def test_a_generated_quotes_artifact_matches_its_schema():
     doc = json.loads((FIXTURES / "derive_v2_ws_scan_1.json").read_text())
     snapshots, observed = {}, datetime.fromisoformat(doc["fetched_at"].replace("Z", "+00:00"))

@@ -41,8 +41,12 @@ def load_policy(path: Path) -> dict:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="coverage_cli", description=__doc__)
     ap.add_argument("--policy", default=str(ROOT / "config" / "policy.yml"))
-    ap.add_argument("--exposure-usd", type=float, required=True,
+    ap.add_argument("--exposure-usd", type=float, default=None,
                     help="total exposure to insure, in USD (sum across accounts as you see fit)")
+    ap.add_argument("--portfolio", default=None,
+                    help="path to a portfolio artifact (data/portfolio.json) — reads the exposure "
+                         "and label from measured positions instead of a hand-typed number; "
+                         "refused when the artifact is incomplete or shows no net long exposure")
     ap.add_argument("--label", default=None,
                     help="what this exposure is (e.g. 'spot ETH', 'margin BTC'), recorded")
     ap.add_argument("--burned-off", action="store_true",
@@ -53,6 +57,37 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--write", default=None, help="path to write coverage.json")
     ap.add_argument("--json", action="store_true", help="print the artifact to stdout")
     args = ap.parse_args(argv)
+
+    if (args.exposure_usd is None) == (args.portfolio is None):
+        print("give exactly one of --exposure-usd or --portfolio", file=sys.stderr)
+        return 2
+
+    subject_source = "explicit --exposure-usd"
+    exposure_usd, label = args.exposure_usd, args.label
+    if args.portfolio:
+        try:
+            port = json.loads(Path(args.portfolio).read_text())
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"could not read portfolio file {args.portfolio!r}: {exc}", file=sys.stderr)
+            return 2
+        if port.get("schema_version") != 1:
+            print(f"portfolio artifact schema_version {port.get('schema_version')!r} is not "
+                  f"supported (expected 1)", file=sys.stderr)
+            return 2
+        if not port.get("complete", False):
+            bad = [a.get("label") or a.get("venue")
+                   for a in port.get("accounts", [])
+                   if a.get("read", True) and not a.get("ok")]
+            print("portfolio artifact is incomplete — refusing to price against an understated "
+                  "exposure; unreadable: " + (", ".join(str(b) for b in bad) or "unknown"),
+                  file=sys.stderr)
+            return 2
+        exposure_usd = (port.get("exposure") or {}).get("usd")
+        if exposure_usd is None or exposure_usd <= 0:
+            print("portfolio artifact shows no net long exposure to insure", file=sys.stderr)
+            return 2
+        label = args.label or (port.get("exposure") or {}).get("label")
+        subject_source = f"portfolio:{args.portfolio} (fetched_at {port.get('fetched_at')})"
 
     policy = load_policy(Path(args.policy))
     mechanisms = build_mechanisms(policy)
@@ -72,7 +107,7 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     plan = plan_hedge(
-        exposure_usd=args.exposure_usd,
+        exposure_usd=exposure_usd,
         policy=policy,
         mechanisms=mechanisms,
         burned_off=args.burned_off,
@@ -85,8 +120,9 @@ def main(argv: list[str] | None = None) -> int:
         "produced_by": "options/coverage_cli",
         "read_only": True,
         "subject": {
-            "label": args.label or "(unlabelled exposure)",
-            "exposure_usd": round(args.exposure_usd, 2),
+            "label": label or "(unlabelled exposure)",
+            "exposure_usd": round(exposure_usd, 2),
+            "source": subject_source,
         },
         "policy": {
             "target_ratio": policy.get("target_ratio"),

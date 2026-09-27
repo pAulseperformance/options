@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/pAulseperformance/options/portfolio.schema.json",
+  "title": "options portfolio artifact",
+  "description": "Read-only snapshot of the user's positions across accounts. totals = what the portfolio is WORTH (every account, cash included); exposure = what a price drop REACHES (net crypto per asset across accounts; stablecoins and offsetting long/short pairs contribute zero). coverage_cli --portfolio consumes this; a dashboard shows both numbers and why they differ.",
+  "type": "object",
+  "required": ["schema_version", "produced_by", "read_only", "fetched_at", "stale_after_hours",
+               "complete", "prices", "accounts", "totals", "exposure"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "produced_by": { "type": "string" },
+    "read_only": {
+      "type": "boolean",
+      "description": "Always true. Reading balances is not trading."
+    },
+    "fetched_at": { "type": "string", "format": "date-time" },
+    "stale_after_hours": {
+      "type": "number",
+      "description": "The artifact's own freshness rule — a dashboard shows STALE past this age."
+    },
+    "complete": {
+      "type": "boolean",
+      "description": "False when any readable account failed. Totals and exposure then UNDERSTATE reality, and coverage_cli refuses the artifact rather than price an understated position."
+    },
+    "prices": {
+      "type": "object",
+      "required": ["source", "rates"],
+      "properties": {
+        "source": { "type": ["string", "null"] },
+        "fetched_at": { "type": ["string", "null"] },
+        "rates": { "type": "object" },
+        "error": { "type": "string" }
+      }
+    },
+    "accounts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["venue", "label", "ok", "positions"],
+        "properties": {
+          "venue": { "type": "string" },
+          "label": { "type": "string" },
+          "read": {
+            "type": "boolean",
+            "description": "False for a venue with nothing to read yet (a placeholder, not an account)."
+          },
+          "ok": { "type": "boolean" },
+          "error": { "type": ["string", "null"] },
+          "usd_total": { "type": ["number", "null"] },
+          "usd_total_source": {
+            "type": ["string", "null"],
+            "enum": ["venue", "computed", null],
+            "description": "Where the account total came from: the venue's own number, or our component sum."
+          },
+          "address": { "type": "string" },
+          "account_index": { "type": "integer" },
+          "host": { "type": "string" },
+          "l1_address": { "type": "string" },
+          "collateral_usd": { "type": ["number", "null"] },
+          "available_usd": { "type": ["number", "null"] },
+          "positions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["asset", "kind"],
+              "properties": {
+                "asset": { "type": "string" },
+                "kind": {
+                  "enum": ["cash", "spot", "balance", "perp"],
+                  "description": "cash = stablecoin; spot = L1 holding; balance = venue asset balance; perp = signed position (the only kind that nets)."
+                },
+                "side": { "type": ["string", "null"], "enum": ["long", "short", null] },
+                "amount": { "type": ["number", "null"] },
+                "price_usd": { "type": ["number", "null"] },
+                "usd": { "type": ["number", "null"] },
+                "entry": { "type": ["number", "null"] },
+                "unrealized_pnl": { "type": ["number", "null"] },
+                "liquidation_price": { "type": ["number", "null"] }
+              }
+            }
+          },
+          "notes": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "totals": {
+      "type": "object",
+      "required": ["usd_total", "cash_usd", "crypto_usd"],
+      "properties": {
+        "usd_total": { "type": "number" },
+        "cash_usd": { "type": "number" },
+        "crypto_usd": {
+          "type": "number",
+          "description": "GROSS crypto position value (both legs of an offsetting pair included) — deliberately different from exposure.usd."
+        },
+        "displayed_accounts": { "type": "integer" }
+      }
+    },
+    "exposure": {
+      "type": "object",
+      "required": ["usd", "label", "components", "notes"],
+      "properties": {
+        "usd": {
+          "type": "number",
+          "description": "Sum of POSITIVE net crypto across assets — the number a planner insures."
+        },
+        "label": { "type": "string" },
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["asset", "net_amount"],
+            "properties": {
+              "asset": { "type": "string" },
+              "net_amount": { "type": "number" },
+              "price_usd": { "type": ["number", "null"] },
+              "usd": { "type": ["number", "null"] },
+              "note": { "type": "string" }
+            }
+          }
+        },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  }
+}

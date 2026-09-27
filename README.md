@@ -28,16 +28,27 @@ yet. Deribit remains a **data source** for gamma walls, not a venue.
 
 So this repo ships the decision, the measurement, and the plan — and never the order.
 
+**Exposure can be measured, not typed.** `apps/portfolio_reader` reads the real accounts —
+Ethereum L1 balances over a public RPC, Lighter accounts over their public API — and publishes
+`data/portfolio.json`: what the portfolio is *worth* (`totals`) beside what a drop actually
+*reaches* (`exposure` — net crypto per asset; stablecoins and offsetting long/short pairs across
+venues contribute zero). `coverage_cli --portfolio` sizes the plan from that artifact and records
+the provenance in `subject.source`. An **incomplete read is refused, never priced**: when any
+account fails, the artifact says so (`complete: false`) and the CLI stops, because understating
+the position is the one failure insurance must never have.
+
 ## Layout
 
 ```
-packages/options_contracts/  coverage.schema.json + quotes.schema.json — the "lego studs"
+packages/options_contracts/  coverage.schema.json + quotes.schema.json + portfolio.schema.json — the "lego studs"
 packages/options_core/       the decision engine (costs, venues, plan, quote overlay)
 apps/coverage_cli/           asks "what should the insurance be?" and publishes data/coverage.json
 apps/derive_quotes/          reads the live Derive v2 book, read-only -> data/quotes.json
+apps/portfolio_reader/       reads YOUR positions (L1 balances + Lighter accounts) -> data/portfolio.json
 config/policy.yml            every number is a config value, not a constant
 data/coverage.json           the published artifact other tools consume
 data/quotes.json             the measurement it is priced from
+data/portfolio.json          the measured positions the plan is priced against
 ops/derive_book_probe.mjs    the v3 venue gate — 12s, no credentials
 tests/                       the decision rules and the quote rules, incl. the import-boundary guard
 ```
@@ -75,14 +86,18 @@ Copied deliberately from `lighter-core`, which learned them the hard way.
 ## Running
 
 ```sh
+# 0. read the actual positions (read-only: public RPC + public venue APIs — writes data/portfolio.json)
+PYTHONPATH=apps uv run --with "lighter-sdk @ git+https://github.com/elliottech/lighter-python.git" \
+    --no-project python -m portfolio_reader
+
 # 1. measure the live book (public, read-only — writes data/quotes.json)
 PYTHONPATH=apps uv run --with websockets --with pyyaml --no-project python -m derive_quotes
 
-# 2. decide, priced by that measurement
+# 2. decide, priced by that measurement and sized by the measured positions
 PYTHONPATH=apps uv run --with pyyaml --no-project python -m coverage_cli \
-    --policy config/policy.yml --quotes data/quotes.json \
-    --exposure-usd 4860 --label "spot + margin, all accounts" \
+    --policy config/policy.yml --portfolio data/portfolio.json --quotes data/quotes.json \
     --write data/coverage.json
+# (or size it by hand: --exposure-usd 4860 --label "spot + margin, all accounts" — exactly one of the two)
 
 uv run --with pytest --with pyyaml --with jsonschema --no-project python -m pytest tests/ -q
 ```
@@ -94,18 +109,22 @@ Do not import this repo's code.
 
 Integration points, in the order they are worth doing:
 
-1. **Trading dashboard** — DONE (2026-09-26): the dashboard's *Options Insurance* card renders
-   `plan.coverage_pct`, `plan.uncovered_usd`, the measured instrument and the `notes`, served at
-   `GET /api/options-coverage` (contract `options.coverage.view/1`) straight from this artifact —
-   own endpoint, freshness window taken from this repo's own `quotes_max_age_hours`, and the
-   pricing marked **EXPIRED** past it rather than shown as live cover. The notes are the honest
-   part: they say *why* cover is missing, which is more useful on a dashboard than insurance that
-   silently does not exist.
+1. **Trading dashboard** — DONE (2026-09-26, extended 2026-09-27): the *Portfolio* card and its
+   `/portfolio` page render the measured positions and the plan together — `GET /api/portfolio`
+   (`portfolio.view/1`) merges this repo's `data/portfolio.json` + `data/coverage.json`, each with
+   its own freshness. `GET /api/options-coverage` (`options.coverage.view/1`) remains the
+   plan-only contract. Pricing is marked **EXPIRED** past the quote window rather than shown as
+   live cover; the notes say *why* cover is missing, which is more useful on a dashboard than
+   insurance that silently does not exist.
 2. **Scanners / research pipelines** — read the artifact for context ("what is currently insured")
    instead of re-deriving it.
 
 ## What is still open
 
+- **Positions are as wide as the reader.** It covers the L1 wallet + both Lighter accounts today.
+  On 2026-09-27 it caught a real move within a day of being built: 1.71 ETH left the tracked wallet
+  on 2026-09-26 18:47 UTC (through two relay wallets into a service hot wallet — likely an
+  exchange/bridge sweep). Money moved elsewhere stops being covered until its account is added.
 - **Execution is unexercised.** The venue is live and quoted; this repo has never placed an order
   (by design — no keys). Buying the put is a human action on the venue's own interface.
 - **Only the 181d series is quoted.** 272d and 363d were empty at measurement; the adapter

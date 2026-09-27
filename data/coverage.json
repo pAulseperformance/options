@@ -3,8 +3,9 @@
   "produced_by": "options/coverage_cli",
   "read_only": true,
   "subject": {
-    "label": "spot + margin, all accounts",
-    "exposure_usd": 4835.92
+    "label": "net crypto (spot + perp), all readable accounts",
+    "exposure_usd": 247.83,
+    "source": "portfolio:data/portfolio.json (fetched_at 2026-09-27T08:38:21+00:00)"
   },
   "policy": {
     "target_ratio": 0.5,
@@ -14,10 +15,10 @@
     "quotes_max_age_hours": 24
   },
   "plan": {
-    "exposure_usd": 4835.92,
+    "exposure_usd": 247.83,
     "target_ratio": 0.5,
     "covered_usd": 0.0,
-    "uncovered_usd": 4835.92,
+    "uncovered_usd": 247.83,
     "coverage_pct": 0.0,
     "is_covered": false,
     "burned_off": false,
@@ -35,8 +36,8 @@
   "quotes": {
     "source": "data/quotes.json",
     "venue": "derive",
-    "fetched_at": "2026-09-26T13:54:10.145003Z",
-    "age_hours": 0.01,
+    "fetched_at": "2026-09-27T08:38:27.258803Z",
+    "age_hours": 0.0,
     "applied": false,
     "reason": "no qualifying two-sided quote in the last measurement"
   }

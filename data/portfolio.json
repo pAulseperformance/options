@@ -1,0 +1,194 @@
+{
+  "schema_version": 1,
+  "produced_by": "options/portfolio_reader",
+  "read_only": true,
+  "fetched_at": "2026-09-27T08:38:21+00:00",
+  "stale_after_hours": 24,
+  "complete": true,
+  "prices": {
+    "source": "coinbase spot",
+    "fetched_at": "2026-09-27T08:38:21+00:00",
+    "rates": {
+      "ETH": 2717.485,
+      "BTC": 84769.195
+    }
+  },
+  "accounts": [
+    {
+      "venue": "ethereum-l1",
+      "label": "spot \u00b7 Ethereum L1",
+      "read": true,
+      "address": "0xe83ECEe6ad078a64F641BdA924c841Fd0F7D58f9",
+      "ok": true,
+      "error": null,
+      "usd_total": 247.56,
+      "usd_total_source": "computed",
+      "positions": [
+        {
+          "asset": "ETH",
+          "kind": "spot",
+          "amount": 0.091098067325,
+          "price_usd": 2717.485,
+          "usd": 247.56
+        }
+      ],
+      "notes": [
+        "WETH, USDC, USDT, WBTC checked \u2014 all zero"
+      ]
+    },
+    {
+      "venue": "lighter-mainnet",
+      "label": "Lighter \u00b7 mainnet",
+      "read": true,
+      "account_index": 281474976483780,
+      "host": "https://mainnet.zklighter.elliot.ai",
+      "l1_address": "0xe83ECEe6ad078a64F641BdA924c841Fd0F7D58f9",
+      "ok": true,
+      "error": null,
+      "usd_total": 1104.25,
+      "usd_total_source": "venue",
+      "collateral_usd": 1106.603906,
+      "available_usd": 1077.679764,
+      "positions": [
+        {
+          "asset": "ETH",
+          "kind": "balance",
+          "amount": 0.0001,
+          "price_usd": 2717.485,
+          "usd": 0.27
+        },
+        {
+          "asset": "USDC",
+          "kind": "cash",
+          "amount": 1106.603906329141,
+          "price_usd": 1.0,
+          "usd": 1106.6
+        },
+        {
+          "asset": "LIT",
+          "kind": "perp",
+          "side": "long",
+          "amount": 1.57,
+          "usd": 7.56,
+          "entry": 4.8462,
+          "unrealized_pnl": -0.044399,
+          "liquidation_price": null
+        },
+        {
+          "asset": "CASHCAT",
+          "kind": "perp",
+          "side": "short",
+          "amount": -308.4,
+          "usd": 57.04,
+          "entry": 0.17748,
+          "unrealized_pnl": -2.30468,
+          "liquidation_price": 3.135499658560312
+        }
+      ],
+      "notes": [
+        "2 of 3 markets nonzero",
+        "venue total = collateral + unrealized PnL; open position notional is exposure, not value"
+      ]
+    },
+    {
+      "venue": "lighter-rh",
+      "label": "Lighter \u00b7 RH chain",
+      "read": true,
+      "account_index": 281474976709370,
+      "host": "https://api.rh.lighter.xyz",
+      "l1_address": "0xe83ECEe6ad078a64F641BdA924c841Fd0F7D58f9",
+      "ok": true,
+      "error": null,
+      "usd_total": 1142.1,
+      "usd_total_source": "venue",
+      "collateral_usd": 1140.011782,
+      "available_usd": 1106.001272,
+      "positions": [
+        {
+          "asset": "USDG",
+          "kind": "cash",
+          "amount": 1140.011782769636,
+          "price_usd": 1.0,
+          "usd": 1140.01
+        },
+        {
+          "asset": "LIT",
+          "kind": "perp",
+          "side": "short",
+          "amount": -1.57,
+          "usd": 7.57,
+          "entry": 4.8457,
+          "unrealized_pnl": 0.038923,
+          "liquidation_price": 647.3253801182893
+        },
+        {
+          "asset": "CASHCAT",
+          "kind": "perp",
+          "side": "long",
+          "amount": 308.4,
+          "usd": 57.06,
+          "entry": 0.17837,
+          "unrealized_pnl": 2.049464,
+          "liquidation_price": null
+        }
+      ],
+      "notes": [
+        "2 of 3 markets nonzero",
+        "venue total = collateral + unrealized PnL; open position notional is exposure, not value"
+      ]
+    },
+    {
+      "venue": "derive",
+      "label": "Derive v2 (Lyra)",
+      "read": false,
+      "ok": true,
+      "error": null,
+      "usd_total": null,
+      "usd_total_source": null,
+      "positions": [],
+      "notes": [
+        "not funded yet \u2014 no account to read; add a reader here when it is"
+      ]
+    }
+  ],
+  "totals": {
+    "usd_total": 2493.91,
+    "cash_usd": 2246.61,
+    "crypto_usd": 377.06,
+    "displayed_accounts": 3
+  },
+  "exposure": {
+    "usd": 247.83,
+    "label": "net crypto (spot + perp), all readable accounts",
+    "components": [
+      {
+        "asset": "ETH",
+        "net_amount": 0.0911980673,
+        "price_usd": 2717.485,
+        "usd": 247.83
+      },
+      {
+        "asset": "LIT",
+        "net_amount": 0.0,
+        "price_usd": 4.815287,
+        "usd": 0.0,
+        "note": "offsetting pair \u2014 carries no exposure"
+      },
+      {
+        "asset": "CASHCAT",
+        "net_amount": 0.0,
+        "price_usd": 0.184955,
+        "usd": 0.0,
+        "note": "offsetting pair \u2014 carries no exposure"
+      }
+    ],
+    "notes": [
+      "LIT: +1.57 on Lighter \u00b7 mainnet and -1.57 on Lighter \u00b7 RH chain \u2014 net 0, excluded",
+      "CASHCAT: -308.4 on Lighter \u00b7 mainnet and +308.4 on Lighter \u00b7 RH chain \u2014 net 0, excluded"
+    ]
+  },
+  "notes": [
+    "read-only: public RPC + public venue APIs; 1 venue(s) present but not read",
+    "exposure nets long and short rows per asset; the TWO numbers differ by design: totals = what it is worth, exposure = what a drop reaches"
+  ]
+}
