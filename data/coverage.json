@@ -4,8 +4,8 @@
   "read_only": true,
   "subject": {
     "label": "net crypto (spot + perp), all readable accounts",
-    "exposure_usd": 236897.5,
-    "source": "portfolio:data/portfolio.json (fetched_at 2026-09-28T19:02:42+00:00)"
+    "exposure_usd": 235963.9,
+    "source": "portfolio:data/portfolio.json (fetched_at 2026-09-28T19:19:41+00:00)"
   },
   "policy": {
     "target_ratio": 0.5,
@@ -15,10 +15,10 @@
     "quotes_max_age_hours": 24
   },
   "plan": {
-    "exposure_usd": 236897.5,
+    "exposure_usd": 235963.9,
     "target_ratio": 0.5,
     "covered_usd": 0.0,
-    "uncovered_usd": 236897.5,
+    "uncovered_usd": 235963.9,
     "coverage_pct": 0.0,
     "is_covered": false,
     "burned_off": false,
