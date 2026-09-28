@@ -32,9 +32,17 @@ ERC20 = {  # symbol -> (contract, decimals) — checked every run so "0" is an a
     "USDT": ("0xdAC17F958D2ee523a2206206994597C13D831ec7", 6),
     "WBTC": ("0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", 8),
 }
-LIGHTER = [  # (venue, label, host, account index)
-    ("lighter-mainnet", "Lighter · mainnet", "https://mainnet.zklighter.elliot.ai", 281474976483780),
-    ("lighter-rh", "Lighter · RH chain", "https://api.rh.lighter.xyz", 281474976709370),
+LIGHTER = [  # (venue, label, host, account index, role) — one row per account READ
+    ('lighter-mainnet', 'Lighter · mainnet', 'https://mainnet.zklighter.elliot.ai', 281474976483780, 'book'),
+    ('lighter-rh', 'Lighter · RH chain', 'https://api.rh.lighter.xyz', 281474976709370, 'book'),
+    ('lighter-mainnet', 'Lighter · mainnet · main account', 'https://mainnet.zklighter.elliot.ai', 728660, 'book'),
+    ('lighter-rh', 'Lighter · RH · main account', 'https://api.rh.lighter.xyz', 29257, 'book'),
+    ('lighter-mainnet', 'Lighter · pool · Christ is King', 'https://mainnet.zklighter.elliot.ai', 281474976498676, 'pool'),
+    # The two remaining accounts under this wallet. Both are near-empty and that is the point:
+    # an account nobody can see is an account nobody checks, and "enumerate them all" means the
+    # page shows every door into the venue, including the ones with nothing behind them yet.
+    ('lighter-mainnet', 'Lighter · mainnet · sub 1 (empty)', 'https://mainnet.zklighter.elliot.ai', 281474976485868, 'book'),
+    ('lighter-mainnet', 'Lighter · mainnet · sub 2 (idle)', 'https://mainnet.zklighter.elliot.ai', 281474976511844, 'book'),
 ]
 UA = {"User-Agent": "Mozilla/5.0 (options/portfolio_reader; read-only)"}
 
@@ -138,10 +146,11 @@ def main(argv: list[str] | None = None) -> int:
         accounts.append(core.failed_account("ethereum-l1", "spot · Ethereum L1",
                                             f"{type(e).__name__}: {e}"))
 
-    for venue, label, host, index in LIGHTER:
+    for venue, label, host, index, role in LIGHTER:
         try:
             raw = asyncio.run(_lighter_account(host, index))
-            accounts.append(core.normalize_lighter(raw, index, host, venue, label, rates))
+            accounts.append(core.normalize_lighter(raw, index, host, venue, label, rates,
+                                                    role))
         except Exception as e:  # noqa: BLE001
             accounts.append(core.failed_account(venue, label, f"{type(e).__name__}: {e}"))
 
@@ -156,7 +165,10 @@ def main(argv: list[str] | None = None) -> int:
     for a in artifact["accounts"]:
         val = "—" if a.get("usd_total") is None else f"${a['usd_total']:,.2f}"
         mark = "✓" if a.get("ok") and a.get("read", True) else ("·" if not a.get("read", True) else "✗")
-        print(f"  {a['label']:<24} {mark} {val:>14}"
+        pct = ((a.get("pool") or {}).get("operator_share_pct"))
+        if a.get("ok") and pct is not None:
+            val += f"  ({pct:g}% yours → ${core.owned_usd(a):,.2f})"
+        print(f"  {a['label']:<38} {mark} {val:>14}"
               + (f"   [{a['error']}]" if not a.get("ok") else ""))
     t, x = artifact["totals"], artifact["exposure"]
     comp = ", ".join(f"{c['asset']} {c['net_amount']:+g} → ${c['usd']:,.2f}"

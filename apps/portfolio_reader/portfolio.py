@@ -17,6 +17,11 @@ Rules this file enforces, each a line earned elsewhere:
 """
 from __future__ import annotations
 
+# Below this many units, an asset that no feed prices is DUST: it is shown with no value rather
+# than failing the account and poisoning the artifact. Above it, the missing price is a real
+# problem and the account fails on purpose.
+DUST_UNITS = 0.001
+
 STABLES = {"USDC", "USDT", "USDG", "DAI", "PYUSD"}
 
 # The artifact's own freshness rule: a dashboard shows STALE past this age. Positions move
@@ -77,18 +82,53 @@ def normalize_l1(wallet: str, balances: dict, rates: dict, tokens_checked: list[
     }
 
 
+def pool_summary(raw: dict) -> dict | None:
+    """A public pool's own block — name, fee, the operator's share, APY and Sharpe.
+
+    The share fraction is the number that must never be lost: a pool's equity is partly OTHER
+    people's capital, so counting all of it as the owner's worth overstates the book by exactly
+    the depositors' slice. `operator_shares / total_shares` is that fraction.
+    """
+    info = raw.get("pool_info") or {}
+    if not info:
+        return None
+    total = num(info.get("total_shares"), 0.0) or 0.0
+    operator = num(info.get("operator_shares"), 0.0) or 0.0
+    frac = (operator / total) if total else None
+    prices = info.get("share_prices") or []
+    return {
+        "name": raw.get("name") or None,
+        "description": (raw.get("description") or "").strip() or None,
+        "operator_fee_pct": num(info.get("operator_fee")),
+        "operator_share_pct": None if frac is None else round(frac * 100.0, 4),
+        "total_shares": total or None,
+        "operator_shares": operator or None,
+        "apy_pct": num(info.get("annual_percentage_yield")),
+        "sharpe": num(info.get("sharpe_ratio")),
+        "share_price": num((prices[-1] or {}).get("share_price")) if prices else None,
+    }
+
+
 def normalize_lighter(raw: dict, index: int, host: str, venue: str, label: str,
-                      rates: dict) -> dict:
+                      rates: dict, role: str = "book") -> dict:
     """One Lighter account payload -> an account.
 
     Asset balances become `cash` (stables) or `balance` (everything else); the venue's own
     marks value them where it gives one (position_value in the same payload), the public spot
     feed fills the rest. Positions become signed `perp` rows — sign is what makes the netting
     on the other side of this file possible.
+
+    A PUBLIC POOL is an account too, but not all of it is the operator's: `usd_total` stays the
+    venue's own pool equity while `owned_fraction` carries the share the operator actually holds,
+    and `totals`/`exposure` scale by it. Showing the pool's full equity as the owner's worth is
+    the one mistake this field exists to prevent.
     """
     positions: list[dict] = []
     errors: list[str] = []
     markets = raw.get("positions") or []
+    locked_only: list[str] = []
+    stake_notes: list[str] = []
+    unpriced: list[str] = []
 
     # The venue's own marks, for balances it does not value directly.
     marks: dict[str, float] = {}
@@ -103,15 +143,51 @@ def normalize_lighter(raw: dict, index: int, host: str, venue: str, label: str,
         margin = num(a.get("margin_balance"), 0.0) or 0.0
         plain = num(a.get("balance"), 0.0) or 0.0
         amt = margin if margin else plain
-        if not amt or not sym:
+        if not amt:
+            # A holding that only ever appears in the venue's locked_balance is NOT read here
+            # (and would break the account on a missing price) — it is named instead, so the
+            # gap is visible rather than silently absent.
+            if sym and (num(a.get("locked_balance"), 0.0) or 0.0) > 0:
+                locked_only.append(sym)
             continue
         price = 1.0 if sym in STABLES else (rates.get(sym) or marks.get(sym))
         if price is None:
+            # A DUST holding of an asset no feed prices — rhSPY 0.0001 in an otherwise idle
+            # account — must not fail the account and poison the whole artifact, and must not
+            # vanish either: it becomes a ROW with no value, named, so the gap shows up in the
+            # book beside the money instead of silently changing it. Anything larger still fails
+            # the account: the gate exists to stop a real position being valued at nothing.
+            if amt < DUST_UNITS:
+                unpriced.append(f"{sym} {amt:g}")
+                positions.append({"asset": sym, "kind": "balance", "amount": round(amt, 12),
+                                  "price_usd": None, "usd": None})
+                continue
             errors.append(f"no price for {sym} ({amt:g} held)")
             continue
         positions.append({
             "asset": sym, "kind": "cash" if sym in STABLES else "balance",
             "amount": round(amt, 12), "price_usd": price, "usd": round(amt * price, 2),
+        })
+
+    # Staked LIT is real value that nothing has ever shown, and it is not in this account either:
+    # the staking POOL account's LIT holding and the venue's own staked total are the same number
+    # (113,568,143), so a stake is custody the pool holds — and the venue's account total excludes
+    # it, exactly the way it excludes a plain balance. Counted as its own `staked` row. If LIT has
+    # no price on this account the stake is NAMED and skipped: an unpriceable row must never be
+    # allowed to poison the artifact.
+    for sh in raw.get("shares") or []:
+        staked = num(sh.get("principal_amount"), 0.0) or 0.0
+        if staked <= 0:
+            continue
+        price = rates.get("LIT") or marks.get("LIT")
+        if price is None:
+            stake_notes.append(f"{staked:,.4f} LIT staked in pool {sh.get('public_pool_index')} — "
+                               f"no LIT price on this account, so the stake is NOT counted")
+            continue
+        positions.append({
+            "asset": "LIT", "kind": "staked", "amount": round(staked, 12),
+            "price_usd": price, "usd": round(staked * price, 2),
+            "pool": sh.get("public_pool_index"),
         })
 
     nonzero = 0
@@ -132,33 +208,73 @@ def normalize_lighter(raw: dict, index: int, host: str, venue: str, label: str,
             "liquidation_price": num(p.get("liquidation_price")) or None,
         })
 
-    notes = [f"{nonzero} of {len(markets)} markets nonzero"] if markets else []
+    notes = ([f"{nonzero} of {len(markets)} markets nonzero"] if markets else []) + stake_notes
+    if unpriced:
+        notes.append(f"{', '.join(unpriced)} held with no price in any feed — shown but NOT "
+                     f"counted; this account's value is understated by whatever they are worth")
+    pool = pool_summary(raw)
+    owned = 1.0
+    if pool is not None:
+        pct = pool.get("operator_share_pct")
+        if pct is None:
+            notes.append("public pool with no share table — counted at 100% of its equity, which "
+                         "OVERSTATES your capital if anyone else has deposited")
+        else:
+            owned = pct / 100.0
+            notes.append(f"public pool · the operator holds {pct:g}% of shares — totals and "
+                         f"exposure count {pct:g}% of this account; the rest is depositors'")
     if not errors:
         has_perps = any(p["kind"] == "perp" for p in positions)
         venue_total = num(raw.get("total_asset_value"))
-        computed = round(sum(p["usd"] for p in positions if p.get("usd") is not None), 2)
-        if venue_total is not None and not has_perps:
-            # Balances-only account: our sum and the venue's number are the same kind of
-            # quantity, so a material gap means something is unseen — say so.
-            if abs(computed - venue_total) > max(5.0, abs(venue_total) * 0.02):
-                notes.append(f"balances sum to ${computed:,.2f} vs venue total ${venue_total:,.2f} "
-                             f"— showing the venue's number")
-        elif venue_total is not None:
-            # With open positions the two numbers are different quantities BY CONSTRUCTION:
-            # the venue's total is collateral + unrealized PnL; position notional is what a
-            # price move reaches, not account value. Explain, never "reconcile".
+        stable = sum(p["usd"] for p in positions
+                     if p["kind"] == "cash" and p.get("usd") is not None)
+        holdings = sum(p["usd"] for p in positions
+                       if p["kind"] in ("balance", "staked") and p.get("usd") is not None)
+        upnl = sum(num(p.get("unrealized_pnl"), 0.0) or 0.0
+                   for p in positions if p["kind"] == "perp")
+        # Measured on every account we read: `total_asset_value` = the STABLECOIN balance + perp
+        # unrealized PnL, exactly. So comparing it against the same-scope sum is a check that CAN
+        # fail — it ran only for balances-only accounts before, which is how a mis-read stable
+        # figure could hide behind an open position.
+        same_scope = stable + upnl
+        if venue_total is not None and abs(same_scope - venue_total) > max(5.0, abs(venue_total) * 0.02):
+            notes.append(f"balances sum to ${same_scope:,.2f} vs venue total ${venue_total:,.2f} "
+                         f"— showing the venue's number")
+        if venue_total is not None and has_perps:
+            # The two numbers are different quantities BY CONSTRUCTION: the venue's total is the
+            # collateral plus unrealized PnL; position notional is what a price move reaches.
             notes.append("venue total = collateral + unrealized PnL; open position notional is "
                          "exposure, not value")
-        usd_total = venue_total if venue_total is not None else computed
+        if venue_total is None:
+            usd_total, source = stable + holdings + upnl, "computed"
+        elif holdings > 0.005:
+            # Anything NON-STABLE the account owns sits outside the venue's total: the LIT staking
+            # pool reports collateral 0 while holding 113.5M LIT, and a real mainnet account holds
+            # 41 ETH outside its reported $20.9k. Value is the venue's number PLUS those holdings;
+            # publishing the venue's figure alone would hide six figures of a real position.
+            usd_total, source = venue_total + holdings, "venue+holdings"
+            notes.append(f"venue total ${venue_total:,.2f} covers the stablecoin balance and perp "
+                         f"PnL only; this account also holds ${holdings:,.2f} of other assets — the "
+                         f"value shown is the whole account")
+        else:
+            usd_total, source = venue_total, "venue"
+        if locked_only:
+            notes.append(f"{', '.join(locked_only)} appears only in the venue's locked_balance and "
+                         f"is NOT counted — this account's value is understated")
     else:
-        usd_total = None
+        usd_total = source = venue_total = None
     return {
         "venue": venue, "label": label, "read": True,
+        "role": "pool" if pool is not None else role,
         "account_index": index, "host": host, "l1_address": raw.get("l1_address"),
         "ok": not errors, "error": "; ".join(errors) or None,
         "usd_total": None if usd_total is None else round(usd_total, 2),
-        "usd_total_source": ("venue" if num(raw.get("total_asset_value")) is not None else "computed")
-                            if not errors else None,
+        "usd_total_source": source,
+        # The venue's own number, kept visible: it is the stablecoin+uPnL figure, NOT the account.
+        "venue_total_usd": None if venue_total is None else round(venue_total, 2),
+        # 1.0 for an account that is entirely the owner's; a pool's operator share otherwise.
+        "owned_fraction": owned,
+        "pool": pool,
         "collateral_usd": num(raw.get("collateral")),
         "available_usd": num(raw.get("available_balance")),
         "positions": positions, "notes": notes,
@@ -198,32 +314,66 @@ def derive_prices_from_positions(accounts: list[dict]) -> dict:
     return out
 
 
+def owned_fraction(account: dict) -> float:
+    """The share of an account that is the owner's own capital.
+
+    1.0 for everything except a pool with outside depositors, where the operator's share of the
+    pool's shares is the fraction of its equity (and of its positions) that is really his.
+    """
+    f = account.get("owned_fraction")
+    if f is None:
+        return 1.0
+    try:
+        f = float(f)
+    except (TypeError, ValueError):
+        return 1.0
+    return min(max(f, 0.0), 1.0)
+
+
+def owned_usd(account: dict) -> float | None:
+    """What this account contributes to the owner's worth — `usd_total`, scaled by his share."""
+    total = account.get("usd_total")
+    return None if total is None else round(total * owned_fraction(account), 2)
+
+
 def exposure_of(accounts: list[dict], rates: dict) -> dict:
     """Net crypto per asset across ALL readable accounts — the number the planner insures.
 
     Positive nets are what a protective put can pay against. A net of exactly zero (a long on
     one venue against a short on another) and a net below zero (already short) contribute $0
     and say why, so nothing silently disappears.
+
+    A pool account's legs are counted at the operator's own share: a drop reaches the pool's
+    full position, but only his fraction of that loss is his. The fraction is named in the notes
+    rather than folded in silently.
     """
     nets: dict[str, float] = {}
     contribs: dict[str, list[tuple[str, float]]] = {}
     notes: list[str] = []
+    scaled: list[str] = []
     for a in accounts:
         if not _readable(a):
             continue
+        where = str(a.get("label") or a.get("venue") or "?")
         if not a.get("ok"):
-            notes.append(f"{a.get('label') or a.get('venue')} unreadable — excluded from exposure")
+            notes.append(f"{where} unreadable — excluded from exposure")
             continue
+        f = owned_fraction(a)
+        if f != 1.0:
+            scaled.append(f"{where} {f * 100:g}%")
         for p in a.get("positions") or []:
             if p.get("kind") == "cash":
                 continue
             asset = p.get("asset")
             if not asset:
                 continue
-            amt = num(p.get("amount"), 0.0) or 0.0
+            amt = (num(p.get("amount"), 0.0) or 0.0) * f
             nets[asset] = nets.get(asset, 0.0) + amt
-            where = str(a.get("label") or a.get("venue") or "?")
-            contribs.setdefault(asset, []).append((where, amt))
+            contribs.setdefault(asset, []).append(
+                (where if f == 1.0 else f"{where} ({f * 100:g}% share)", amt))
+    if scaled:
+        notes.append("counted at the operator's share, not the account's full size — "
+                     + ", ".join(scaled) + " · the depositors' part is not your exposure")
 
     marks = derive_prices_from_positions(accounts)
     components: list[dict] = []
@@ -262,34 +412,58 @@ def totals_of(accounts: list[dict]) -> dict:
 
     `crypto_usd` here is GROSS position value (both legs of an offsetting pair show up) —
     deliberately different from `exposure.usd`, and the reason the two fields exist apart.
+
+    `usd_total` is what is the OWNER'S. An account holding other people's capital (a public
+    pool) contributes its operator share, and the difference is published separately as
+    `delegated_usd` so the pool's real size is visible without being claimed as his worth.
     """
     cash = crypto = 0.0
+    gross = owned = 0.0
     for a in readable_accounts(accounts):
         if not a.get("ok"):
             continue
+        f = owned_fraction(a)
         for p in a.get("positions") or []:
             usd = p.get("usd")
             if usd is None:
                 continue
             if p.get("kind") == "cash":
-                cash += usd
+                cash += usd * f
             else:
-                crypto += usd
-    total = sum(a["usd_total"] for a in readable_accounts(accounts)
-                if a.get("ok") and a.get("usd_total") is not None)
-    return {"usd_total": round(total, 2), "cash_usd": round(cash, 2),
-            "crypto_usd": round(crypto, 2), "displayed_accounts": len(readable_accounts(accounts))}
+                crypto += usd * f
+        if a.get("usd_total") is not None:
+            gross += a["usd_total"]
+            owned += a["usd_total"] * f
+    out = {"usd_total": round(owned, 2), "cash_usd": round(cash, 2),
+           "crypto_usd": round(crypto, 2),
+           "displayed_accounts": len(readable_accounts(accounts))}
+    if gross - owned > 0.005:
+        out["usd_total_gross"] = round(gross, 2)
+        out["delegated_usd"] = round(gross - owned, 2)
+    return out
 
 
 def build_artifact(accounts: list[dict], prices: dict, fetched_at: str) -> dict:
     """Assemble the published artifact. `fetched_at` is passed in so this stays pure."""
     complete = all(a.get("ok") for a in readable_accounts(accounts))
+    totals = totals_of(accounts)
     notes = [
         f"read-only: public RPC + public venue APIs; {sum(1 for a in accounts if not _readable(a))} "
         f"venue(s) present but not read",
         "exposure nets long and short rows per asset; the TWO numbers differ by design: "
         "totals = what it is worth, exposure = what a drop reaches",
     ]
+    pools = [a for a in readable_accounts(accounts) if a.get("role") == "pool"]
+    if pools:
+        named = "; ".join(
+            f"{(a.get('pool') or {}).get('name') or a.get('label')} — "
+            f"{a.get('usd_total'):,.2f} pooled, "
+            + (f"{a['pool']['operator_share_pct']:g}% yours"
+               if (a.get("pool") or {}).get("operator_share_pct") is not None else "share unknown")
+            for a in pools)
+        notes.append(f"pools are partly other people's capital: {named}"
+                     + (f" · ${totals['delegated_usd']:,.2f} of the gross total is depositors'"
+                        if totals.get("delegated_usd") else ""))
     if not complete:
         notes.insert(0, "INCOMPLETE — at least one readable account failed; totals and exposure "
                         "UNDERSTATE reality. coverage_cli refuses this artifact by design.")
@@ -302,7 +476,7 @@ def build_artifact(accounts: list[dict], prices: dict, fetched_at: str) -> dict:
         "complete": complete,
         "prices": prices,
         "accounts": accounts,
-        "totals": totals_of(accounts),
+        "totals": totals,
         "exposure": exposure_of(accounts, prices.get("rates") or {}),
         "notes": notes,
     }

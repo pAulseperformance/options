@@ -4,8 +4,8 @@
   "read_only": true,
   "subject": {
     "label": "net crypto (spot + perp), all readable accounts",
-    "exposure_usd": 247.83,
-    "source": "portfolio:data/portfolio.json (fetched_at 2026-09-27T08:38:21+00:00)"
+    "exposure_usd": 236897.5,
+    "source": "portfolio:data/portfolio.json (fetched_at 2026-09-28T19:02:42+00:00)"
   },
   "policy": {
     "target_ratio": 0.5,
@@ -15,10 +15,10 @@
     "quotes_max_age_hours": 24
   },
   "plan": {
-    "exposure_usd": 247.83,
+    "exposure_usd": 236897.5,
     "target_ratio": 0.5,
     "covered_usd": 0.0,
-    "uncovered_usd": 247.83,
+    "uncovered_usd": 236897.5,
     "coverage_pct": 0.0,
     "is_covered": false,
     "burned_off": false,
@@ -29,16 +29,7 @@
     "notes": [
       "NO VENUE AVAILABLE \u2014 position is uninsured",
       "derive: live but has no real quote (premium_bps=0.0)",
-      "lighter_options: Lighter options do not exist yet; placeholder for the expected venue",
-      "derive: the last quote run found no qualifying long-dated put"
+      "lighter_options: Lighter options do not exist yet; placeholder for the expected venue"
     ]
-  },
-  "quotes": {
-    "source": "data/quotes.json",
-    "venue": "derive",
-    "fetched_at": "2026-09-27T16:25:36.036642Z",
-    "age_hours": 0.0,
-    "applied": false,
-    "reason": "no qualifying two-sided quote in the last measurement"
   }
 }

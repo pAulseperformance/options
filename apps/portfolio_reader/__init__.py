@@ -10,8 +10,11 @@ spot feed.
 
 Two different numbers come out of this app, deliberately:
 
-  totals.usd_total    what the portfolio is WORTH — every account, cash and all.
-  exposure.usd        what a price drop REACHES — net crypto per asset across ALL accounts.
+  totals.usd_total    what the portfolio is WORTH — every account, cash and all, with a
+                      public pool counted at the operator's OWN share (its full equity is
+                      published on the account, and the depositors' part as delegated_usd).
+  exposure.usd        what a price drop REACHES — net crypto per asset across ALL accounts,
+                      a pool's legs scaled to that same share.
 
 The planner consumes the second. Stablecoins contribute nothing to it (cash does not fall), and
 a long on one venue against a short on another nets out (that is what the pair is for). Netting

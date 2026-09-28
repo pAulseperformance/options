@@ -2,15 +2,15 @@
   "schema_version": 1,
   "produced_by": "options/portfolio_reader",
   "read_only": true,
-  "fetched_at": "2026-09-27T08:38:21+00:00",
+  "fetched_at": "2026-09-28T19:02:42+00:00",
   "stale_after_hours": 24,
   "complete": true,
   "prices": {
     "source": "coinbase spot",
-    "fetched_at": "2026-09-27T08:38:21+00:00",
+    "fetched_at": "2026-09-28T19:02:42+00:00",
     "rates": {
-      "ETH": 2717.485,
-      "BTC": 84769.195
+      "ETH": 2696.875,
+      "BTC": 83951.375
     }
   },
   "accounts": [
@@ -21,15 +21,15 @@
       "address": "0xe83ECEe6ad078a64F641BdA924c841Fd0F7D58f9",
       "ok": true,
       "error": null,
-      "usd_total": 247.56,
+      "usd_total": 245.68,
       "usd_total_source": "computed",
       "positions": [
         {
           "asset": "ETH",
           "kind": "spot",
           "amount": 0.091098067325,
-          "price_usd": 2717.485,
-          "usd": 247.56
+          "price_usd": 2696.875,
+          "usd": 245.68
         }
       ],
       "notes": [
@@ -40,101 +40,436 @@
       "venue": "lighter-mainnet",
       "label": "Lighter \u00b7 mainnet",
       "read": true,
+      "role": "book",
       "account_index": 281474976483780,
       "host": "https://mainnet.zklighter.elliot.ai",
       "l1_address": "0xe83ECEe6ad078a64F641BdA924c841Fd0F7D58f9",
       "ok": true,
       "error": null,
-      "usd_total": 1104.25,
-      "usd_total_source": "venue",
-      "collateral_usd": 1106.603906,
-      "available_usd": 1077.679764,
+      "usd_total": 1074.45,
+      "usd_total_source": "venue+holdings",
+      "venue_total_usd": 1074.18,
+      "owned_fraction": 1.0,
+      "pool": null,
+      "collateral_usd": 1074.842504,
+      "available_usd": 1067.234001,
       "positions": [
         {
           "asset": "ETH",
           "kind": "balance",
           "amount": 0.0001,
-          "price_usd": 2717.485,
+          "price_usd": 2696.875,
           "usd": 0.27
         },
         {
           "asset": "USDC",
           "kind": "cash",
-          "amount": 1106.603906329141,
+          "amount": 1074.842504449554,
           "price_usd": 1.0,
-          "usd": 1106.6
+          "usd": 1074.84
         },
         {
           "asset": "LIT",
           "kind": "perp",
           "side": "long",
           "amount": 1.57,
-          "usd": 7.56,
+          "usd": 6.94,
           "entry": 4.8462,
-          "unrealized_pnl": -0.044399,
+          "unrealized_pnl": -0.664078,
           "liquidation_price": null
-        },
-        {
-          "asset": "CASHCAT",
-          "kind": "perp",
-          "side": "short",
-          "amount": -308.4,
-          "usd": 57.04,
-          "entry": 0.17748,
-          "unrealized_pnl": -2.30468,
-          "liquidation_price": 3.135499658560312
         }
       ],
       "notes": [
-        "2 of 3 markets nonzero",
-        "venue total = collateral + unrealized PnL; open position notional is exposure, not value"
+        "1 of 3 markets nonzero",
+        "venue total = collateral + unrealized PnL; open position notional is exposure, not value",
+        "venue total $1,074.18 covers the stablecoin balance and perp PnL only; this account also holds $0.27 of other assets \u2014 the value shown is the whole account"
       ]
     },
     {
       "venue": "lighter-rh",
       "label": "Lighter \u00b7 RH chain",
       "read": true,
+      "role": "book",
       "account_index": 281474976709370,
       "host": "https://api.rh.lighter.xyz",
       "l1_address": "0xe83ECEe6ad078a64F641BdA924c841Fd0F7D58f9",
       "ok": true,
       "error": null,
-      "usd_total": 1142.1,
+      "usd_total": 1163.12,
       "usd_total_source": "venue",
-      "collateral_usd": 1140.011782,
-      "available_usd": 1106.001272,
+      "venue_total_usd": 1163.12,
+      "owned_fraction": 1.0,
+      "pool": null,
+      "collateral_usd": 1162.462045,
+      "available_usd": 1156.168687,
       "positions": [
         {
           "asset": "USDG",
           "kind": "cash",
-          "amount": 1140.011782769636,
+          "amount": 1162.462045991809,
           "price_usd": 1.0,
-          "usd": 1140.01
+          "usd": 1162.46
         },
         {
           "asset": "LIT",
           "kind": "perp",
           "side": "short",
           "amount": -1.57,
-          "usd": 7.57,
+          "usd": 6.95,
           "entry": 4.8457,
-          "unrealized_pnl": 0.038923,
-          "liquidation_price": 647.3253801182893
+          "unrealized_pnl": 0.657189,
+          "liquidation_price": 665.417300386715
+        }
+      ],
+      "notes": [
+        "1 of 3 markets nonzero",
+        "venue total = collateral + unrealized PnL; open position notional is exposure, not value"
+      ]
+    },
+    {
+      "venue": "lighter-mainnet",
+      "label": "Lighter \u00b7 mainnet \u00b7 main account",
+      "read": true,
+      "role": "book",
+      "account_index": 728660,
+      "host": "https://mainnet.zklighter.elliot.ai",
+      "l1_address": "0xe83ECEe6ad078a64F641BdA924c841Fd0F7D58f9",
+      "ok": true,
+      "error": null,
+      "usd_total": 170161.26,
+      "usd_total_source": "venue+holdings",
+      "venue_total_usd": 21489.67,
+      "owned_fraction": 1.0,
+      "pool": null,
+      "collateral_usd": 22837.870477,
+      "available_usd": 12202.192767,
+      "positions": [
+        {
+          "asset": "ETH",
+          "kind": "balance",
+          "amount": 41.16107287,
+          "price_usd": 2696.875,
+          "usd": 111006.27
+        },
+        {
+          "asset": "LIT",
+          "kind": "balance",
+          "amount": 4563.88554199,
+          "price_usd": 4.4211,
+          "usd": 20177.39
+        },
+        {
+          "asset": "USDC",
+          "kind": "cash",
+          "amount": 22837.870477459925,
+          "price_usd": 1.0,
+          "usd": 22837.87
+        },
+        {
+          "asset": "LIT",
+          "kind": "staked",
+          "amount": 3955.55998641,
+          "price_usd": 4.4211,
+          "usd": 17487.93,
+          "pool": 281474976624800
+        },
+        {
+          "asset": "KAITO",
+          "kind": "perp",
+          "side": "long",
+          "amount": 2095.5,
+          "usd": 702.62,
+          "entry": 0.37064,
+          "unrealized_pnl": -74.05497,
+          "liquidation_price": null
+        },
+        {
+          "asset": "XPL",
+          "kind": "perp",
+          "side": "long",
+          "amount": 138673.9,
+          "usd": 13929.79,
+          "entry": 0.10546,
+          "unrealized_pnl": -695.349794,
+          "liquidation_price": null
+        },
+        {
+          "asset": "FIL",
+          "kind": "perp",
+          "side": "long",
+          "amount": 4208.0,
+          "usd": 4440.41,
+          "entry": 1.09195,
+          "unrealized_pnl": -154.520804,
+          "liquidation_price": null
+        },
+        {
+          "asset": "LIT",
+          "kind": "perp",
+          "side": "long",
+          "amount": 5657.7,
+          "usd": 25013.26,
+          "entry": 4.5205,
+          "unrealized_pnl": -562.438121,
+          "liquidation_price": 1.2241153069147916
+        },
+        {
+          "asset": "AZTEC",
+          "kind": "perp",
+          "side": "long",
+          "amount": 93574.0,
+          "usd": 1858.85,
+          "entry": 0.01858,
+          "unrealized_pnl": 120.24259,
+          "liquidation_price": null
         },
         {
           "asset": "CASHCAT",
           "kind": "perp",
           "side": "long",
-          "amount": 308.4,
-          "usd": 57.06,
-          "entry": 0.17837,
-          "unrealized_pnl": 2.049464,
+          "amount": 214.7,
+          "usd": 40.68,
+          "entry": 0.18035,
+          "unrealized_pnl": 1.958064,
+          "liquidation_price": null
+        },
+        {
+          "asset": "PONS",
+          "kind": "perp",
+          "side": "long",
+          "amount": 6862.8,
+          "usd": 3690.75,
+          "entry": 0.53546,
+          "unrealized_pnl": 15.95958,
           "liquidation_price": null
         }
       ],
       "notes": [
-        "2 of 3 markets nonzero",
+        "7 of 46 markets nonzero",
+        "venue total = collateral + unrealized PnL; open position notional is exposure, not value",
+        "venue total $21,489.67 covers the stablecoin balance and perp PnL only; this account also holds $148,671.59 of other assets \u2014 the value shown is the whole account",
+        "UNI appears only in the venue's locked_balance and is NOT counted \u2014 this account's value is understated"
+      ]
+    },
+    {
+      "venue": "lighter-rh",
+      "label": "Lighter \u00b7 RH \u00b7 main account",
+      "read": true,
+      "role": "book",
+      "account_index": 29257,
+      "host": "https://api.rh.lighter.xyz",
+      "l1_address": "0xe83ECEe6ad078a64F641BdA924c841Fd0F7D58f9",
+      "ok": true,
+      "error": null,
+      "usd_total": 5664.24,
+      "usd_total_source": "venue",
+      "venue_total_usd": 5664.24,
+      "owned_fraction": 1.0,
+      "pool": null,
+      "collateral_usd": 5575.867395,
+      "available_usd": 4118.706606,
+      "positions": [
+        {
+          "asset": "USDG",
+          "kind": "cash",
+          "amount": 5575.867395076919,
+          "price_usd": 1.0,
+          "usd": 5575.87
+        },
+        {
+          "asset": "LIT",
+          "kind": "perp",
+          "side": "long",
+          "amount": 1746.29,
+          "usd": 7727.68,
+          "entry": 4.3746,
+          "unrealized_pnl": 88.375714,
+          "liquidation_price": 1.342742328021119
+        }
+      ],
+      "notes": [
+        "1 of 4 markets nonzero",
         "venue total = collateral + unrealized PnL; open position notional is exposure, not value"
+      ]
+    },
+    {
+      "venue": "lighter-mainnet",
+      "label": "Lighter \u00b7 pool \u00b7 Christ is King",
+      "read": true,
+      "role": "pool",
+      "account_index": 281474976498676,
+      "host": "https://mainnet.zklighter.elliot.ai",
+      "l1_address": "0xe83ECEe6ad078a64F641BdA924c841Fd0F7D58f9",
+      "ok": true,
+      "error": null,
+      "usd_total": 92770.86,
+      "usd_total_source": "venue",
+      "venue_total_usd": 92770.86,
+      "owned_fraction": 0.6117009999999999,
+      "pool": {
+        "name": "Christ is King",
+        "description": "A veteran operated discretionary vault designed for capital preservation and steady compounding.\n\nSet, Forget, Grow.",
+        "operator_fee_pct": 10.0,
+        "operator_share_pct": 61.1701,
+        "total_shares": 68985816.0,
+        "operator_shares": 42198671.0,
+        "apy_pct": 131.8144727858707,
+        "sharpe": 4.885713132260648,
+        "share_price": 0.0013563525266991117
+      },
+      "collateral_usd": 93333.979349,
+      "available_usd": 82170.736934,
+      "positions": [
+        {
+          "asset": "USDC",
+          "kind": "cash",
+          "amount": 93333.97934979277,
+          "price_usd": 1.0,
+          "usd": 93333.98
+        },
+        {
+          "asset": "KAITO",
+          "kind": "perp",
+          "side": "long",
+          "amount": 2127.5,
+          "usd": 713.35,
+          "entry": 0.37064,
+          "unrealized_pnl": -75.18585,
+          "liquidation_price": null
+        },
+        {
+          "asset": "XPL",
+          "kind": "perp",
+          "side": "long",
+          "amount": 32754.6,
+          "usd": 3290.2,
+          "entry": 0.10539,
+          "unrealized_pnl": -161.81571,
+          "liquidation_price": null
+        },
+        {
+          "asset": "FIL",
+          "kind": "perp",
+          "side": "long",
+          "amount": 8036.9,
+          "usd": 8480.78,
+          "entry": 1.06522,
+          "unrealized_pnl": -80.288631,
+          "liquidation_price": null
+        },
+        {
+          "asset": "LIT",
+          "kind": "perp",
+          "side": "long",
+          "amount": 3538.77,
+          "usd": 15645.26,
+          "entry": 4.6054,
+          "unrealized_pnl": -652.241642,
+          "liquidation_price": null
+        },
+        {
+          "asset": "JTO",
+          "kind": "perp",
+          "side": "long",
+          "amount": 15219.7,
+          "usd": 8539.01,
+          "entry": 0.60695,
+          "unrealized_pnl": -698.650049,
+          "liquidation_price": null
+        },
+        {
+          "asset": "AZTEC",
+          "kind": "perp",
+          "side": "long",
+          "amount": 368407.0,
+          "usd": 7318.41,
+          "entry": 0.017399,
+          "unrealized_pnl": 908.556973,
+          "liquidation_price": null
+        },
+        {
+          "asset": "CASHCAT",
+          "kind": "perp",
+          "side": "long",
+          "amount": 21720.6,
+          "usd": 4115.4,
+          "entry": 0.18082,
+          "unrealized_pnl": 187.849715,
+          "liquidation_price": null
+        },
+        {
+          "asset": "PONS",
+          "kind": "perp",
+          "side": "long",
+          "amount": 3561.8,
+          "usd": 1915.5,
+          "entry": 0.53536,
+          "unrealized_pnl": 8.655174,
+          "liquidation_price": null
+        }
+      ],
+      "notes": [
+        "8 of 45 markets nonzero",
+        "public pool \u00b7 the operator holds 61.1701% of shares \u2014 totals and exposure count 61.1701% of this account; the rest is depositors'",
+        "venue total = collateral + unrealized PnL; open position notional is exposure, not value"
+      ]
+    },
+    {
+      "venue": "lighter-mainnet",
+      "label": "Lighter \u00b7 mainnet \u00b7 sub 1 (empty)",
+      "read": true,
+      "role": "book",
+      "account_index": 281474976485868,
+      "host": "https://mainnet.zklighter.elliot.ai",
+      "l1_address": "0xe83ECEe6ad078a64F641BdA924c841Fd0F7D58f9",
+      "ok": true,
+      "error": null,
+      "usd_total": 0.0,
+      "usd_total_source": "venue",
+      "venue_total_usd": 0.0,
+      "owned_fraction": 1.0,
+      "pool": null,
+      "collateral_usd": 0.0,
+      "available_usd": 0.0,
+      "positions": [],
+      "notes": []
+    },
+    {
+      "venue": "lighter-mainnet",
+      "label": "Lighter \u00b7 mainnet \u00b7 sub 2 (idle)",
+      "read": true,
+      "role": "book",
+      "account_index": 281474976511844,
+      "host": "https://mainnet.zklighter.elliot.ai",
+      "l1_address": "0xe83ECEe6ad078a64F641BdA924c841Fd0F7D58f9",
+      "ok": true,
+      "error": null,
+      "usd_total": 260.67,
+      "usd_total_source": "venue",
+      "venue_total_usd": 260.67,
+      "owned_fraction": 1.0,
+      "pool": null,
+      "collateral_usd": 260.672685,
+      "available_usd": 260.672685,
+      "positions": [
+        {
+          "asset": "USDC",
+          "kind": "cash",
+          "amount": 260.672685327144,
+          "price_usd": 1.0,
+          "usd": 260.67
+        },
+        {
+          "asset": "rhSPY",
+          "kind": "balance",
+          "amount": 0.0001,
+          "price_usd": null,
+          "usd": null
+        }
+      ],
+      "notes": [
+        "0 of 11 markets nonzero",
+        "rhSPY 0.0001 held with no price in any feed \u2014 shown but NOT counted; this account's value is understated by whatever they are worth"
       ]
     },
     {
@@ -152,43 +487,87 @@
     }
   ],
   "totals": {
-    "usd_total": 2493.91,
-    "cash_usd": 2246.61,
-    "crypto_usd": 377.06,
-    "displayed_accounts": 3
+    "usd_total": 235317.45,
+    "cash_usd": 88004.2,
+    "crypto_usd": 236931.48,
+    "displayed_accounts": 8,
+    "usd_total_gross": 271340.28,
+    "delegated_usd": 36022.83
   },
   "exposure": {
-    "usd": 247.83,
+    "usd": 236897.5,
     "label": "net crypto (spot + perp), all readable accounts",
     "components": [
       {
-        "asset": "ETH",
-        "net_amount": 0.0911980673,
-        "price_usd": 2717.485,
-        "usd": 247.83
+        "asset": "AZTEC",
+        "net_amount": 318928.9303069999,
+        "price_usd": 0.019865,
+        "usd": 6335.53
+      },
+      {
+        "asset": "XPL",
+        "net_amount": 158709.9215746,
+        "price_usd": 0.10045,
+        "usd": 15942.41
       },
       {
         "asset": "LIT",
-        "net_amount": 0.0,
-        "price_usd": 4.815287,
-        "usd": 0.0,
-        "note": "offsetting pair \u2014 carries no exposure"
+        "net_amount": 18088.10467617,
+        "price_usd": 4.420382,
+        "usd": 79956.34
       },
       {
         "asset": "CASHCAT",
-        "net_amount": 0.0,
-        "price_usd": 0.184955,
-        "usd": 0.0,
-        "note": "offsetting pair \u2014 carries no exposure"
+        "net_amount": 13501.2127406,
+        "price_usd": 0.189474,
+        "usd": 2558.12
+      },
+      {
+        "asset": "JTO",
+        "net_amount": 9309.9057097,
+        "price_usd": 0.56105,
+        "usd": 5223.32
+      },
+      {
+        "asset": "FIL",
+        "net_amount": 9124.1797669,
+        "price_usd": 1.055231,
+        "usd": 9628.11
+      },
+      {
+        "asset": "PONS",
+        "net_amount": 9041.5566218,
+        "price_usd": 0.537791,
+        "usd": 4862.47
+      },
+      {
+        "asset": "KAITO",
+        "net_amount": 3396.8938775,
+        "price_usd": 0.335299,
+        "usd": 1138.98
+      },
+      {
+        "asset": "ETH",
+        "net_amount": 41.2522709373,
+        "price_usd": 2696.875,
+        "usd": 111252.22
+      },
+      {
+        "asset": "rhSPY",
+        "net_amount": 0.0001,
+        "price_usd": null,
+        "usd": null,
+        "note": "no price \u2014 cannot value"
       }
     ],
     "notes": [
-      "LIT: +1.57 on Lighter \u00b7 mainnet and -1.57 on Lighter \u00b7 RH chain \u2014 net 0, excluded",
-      "CASHCAT: -308.4 on Lighter \u00b7 mainnet and +308.4 on Lighter \u00b7 RH chain \u2014 net 0, excluded"
+      "counted at the operator's share, not the account's full size \u2014 Lighter \u00b7 pool \u00b7 Christ is King 61.1701% \u00b7 the depositors' part is not your exposure",
+      "rhSPY: no price source \u2014 exposure cannot include it"
     ]
   },
   "notes": [
     "read-only: public RPC + public venue APIs; 1 venue(s) present but not read",
-    "exposure nets long and short rows per asset; the TWO numbers differ by design: totals = what it is worth, exposure = what a drop reaches"
+    "exposure nets long and short rows per asset; the TWO numbers differ by design: totals = what it is worth, exposure = what a drop reaches",
+    "pools are partly other people's capital: Christ is King \u2014 92,770.86 pooled, 61.1701% yours \u00b7 $36,022.83 of the gross total is depositors'"
   ]
 }

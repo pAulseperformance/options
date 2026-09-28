@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/pAulseperformance/options/portfolio.schema.json",
   "title": "options portfolio artifact",
-  "description": "Read-only snapshot of the user's positions across accounts. totals = what the portfolio is WORTH (every account, cash included); exposure = what a price drop REACHES (net crypto per asset across accounts; stablecoins and offsetting long/short pairs contribute zero). coverage_cli --portfolio consumes this; a dashboard shows both numbers and why they differ.",
+  "description": "Read-only snapshot of the user's positions across accounts. totals = what the portfolio is WORTH (every account, cash included, a pool counted at the operator's own share); exposure = what a price drop REACHES (net crypto per asset across accounts; stablecoins and offsetting long/short pairs contribute zero). coverage_cli --portfolio consumes this; a dashboard shows both numbers and why they differ. A PUBLIC POOL account's own `usd_total` stays the venue's full pool equity — `owned_fraction` is the share that is the owner's, and `totals` applies it, so pooled depositor capital is never claimed as his worth.",
   "type": "object",
   "required": ["schema_version", "produced_by", "read_only", "fetched_at", "stale_after_hours",
                "complete", "prices", "accounts", "totals", "exposure"],
@@ -49,13 +49,40 @@
           "usd_total": { "type": ["number", "null"] },
           "usd_total_source": {
             "type": ["string", "null"],
-            "enum": ["venue", "computed", null],
-            "description": "Where the account total came from: the venue's own number, or our component sum."
+            "enum": ["venue", "venue+holdings", "computed", null],
+            "description": "Where the account total came from. `venue` = the venue's own total_asset_value; `venue+holdings` = that PLUS the non-stable assets the venue's total leaves out (measured: total_asset_value = stablecoin balance + perp unrealized PnL, so ETH/LIT holdings and the staking pool's 113.5M LIT are not in it); `computed` = our own sum, no venue figure available."
+          },
+          "venue_total_usd": {
+            "type": ["number", "null"],
+            "description": "The venue's own published total, kept alongside `usd_total` so the two can never be confused. It covers the stablecoin balance and perp PnL only."
           },
           "address": { "type": "string" },
           "account_index": { "type": "integer" },
           "host": { "type": "string" },
           "l1_address": { "type": "string" },
+          "role": {
+            "enum": ["book", "pool"],
+            "description": "pool = a Lighter public pool: an account holding other people's capital as well as the operator's."
+          },
+          "owned_fraction": {
+            "type": "number",
+            "description": "The share of this account that is the owner's own capital. 1.0 for every account except a pool, where it is operator_shares / total_shares. totals and exposure apply it."
+          },
+          "pool": {
+            "type": ["object", "null"],
+            "description": "Present on a public pool. `operator_share_pct` is the ownership fraction the totals use; the rest is depositors'.",
+            "properties": {
+              "name": { "type": ["string", "null"] },
+              "description": { "type": ["string", "null"] },
+              "operator_fee_pct": { "type": ["number", "null"] },
+              "operator_share_pct": { "type": ["number", "null"] },
+              "total_shares": { "type": ["number", "null"] },
+              "operator_shares": { "type": ["number", "null"] },
+              "apy_pct": { "type": ["number", "null"] },
+              "sharpe": { "type": ["number", "null"] },
+              "share_price": { "type": ["number", "null"] }
+            }
+          },
           "collateral_usd": { "type": ["number", "null"] },
           "available_usd": { "type": ["number", "null"] },
           "positions": {
@@ -66,8 +93,8 @@
               "properties": {
                 "asset": { "type": "string" },
                 "kind": {
-                  "enum": ["cash", "spot", "balance", "perp"],
-                  "description": "cash = stablecoin; spot = L1 holding; balance = venue asset balance; perp = signed position (the only kind that nets)."
+                  "enum": ["cash", "spot", "balance", "staked", "perp"],
+                  "description": "cash = stablecoin; spot = L1 holding; balance = venue asset balance; staked = LIT committed to the venue's staking pool (custody the pool holds, so it appears in no balance); perp = signed position (the only kind that nets)."
                 },
                 "side": { "type": ["string", "null"], "enum": ["long", "short", null] },
                 "amount": { "type": ["number", "null"] },
@@ -91,7 +118,15 @@
         "cash_usd": { "type": "number" },
         "crypto_usd": {
           "type": "number",
-          "description": "GROSS crypto position value (both legs of an offsetting pair included) — deliberately different from exposure.usd."
+          "description": "GROSS crypto position value (both legs of an offsetting pair included) — deliberately different from exposure.usd. Scaled to the owner's share of any pool."
+        },
+        "usd_total_gross": {
+          "type": "number",
+          "description": "Present only when the book includes other people's capital. Sum of every account's own `usd_total` — what the accounts hold, before the pool share is applied. Compare with `usd_total` (the owner's) to see what is delegated to him."
+        },
+        "delegated_usd": {
+          "type": "number",
+          "description": "Present only when nonzero: the part of `usd_total_gross` that belongs to depositors in pools the owner operates. It is real capital under his management, and it is NOT his worth."
         },
         "displayed_accounts": { "type": "integer" }
       }
