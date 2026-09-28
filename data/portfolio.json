@@ -2,15 +2,15 @@
   "schema_version": 1,
   "produced_by": "options/portfolio_reader",
   "read_only": true,
-  "fetched_at": "2026-09-28T19:02:42+00:00",
+  "fetched_at": "2026-09-28T19:19:41+00:00",
   "stale_after_hours": 24,
   "complete": true,
   "prices": {
     "source": "coinbase spot",
-    "fetched_at": "2026-09-28T19:02:42+00:00",
+    "fetched_at": "2026-09-28T19:19:41+00:00",
     "rates": {
-      "ETH": 2696.875,
-      "BTC": 83951.375
+      "ETH": 2683.19,
+      "BTC": 83670.345
     }
   },
   "accounts": [
@@ -21,15 +21,15 @@
       "address": "0xe83ECEe6ad078a64F641BdA924c841Fd0F7D58f9",
       "ok": true,
       "error": null,
-      "usd_total": 245.68,
+      "usd_total": 244.43,
       "usd_total_source": "computed",
       "positions": [
         {
           "asset": "ETH",
           "kind": "spot",
           "amount": 0.091098067325,
-          "price_usd": 2696.875,
-          "usd": 245.68
+          "price_usd": 2683.19,
+          "usd": 244.43
         }
       ],
       "notes": [
@@ -46,9 +46,9 @@
       "l1_address": "0xe83ECEe6ad078a64F641BdA924c841Fd0F7D58f9",
       "ok": true,
       "error": null,
-      "usd_total": 1074.45,
+      "usd_total": 1074.44,
       "usd_total_source": "venue+holdings",
-      "venue_total_usd": 1074.18,
+      "venue_total_usd": 1074.17,
       "owned_fraction": 1.0,
       "pool": null,
       "collateral_usd": 1074.842504,
@@ -58,7 +58,7 @@
           "asset": "ETH",
           "kind": "balance",
           "amount": 0.0001,
-          "price_usd": 2696.875,
+          "price_usd": 2683.19,
           "usd": 0.27
         },
         {
@@ -75,14 +75,14 @@
           "amount": 1.57,
           "usd": 6.94,
           "entry": 4.8462,
-          "unrealized_pnl": -0.664078,
+          "unrealized_pnl": -0.673341,
           "liquidation_price": null
         }
       ],
       "notes": [
         "1 of 3 markets nonzero",
         "venue total = collateral + unrealized PnL; open position notional is exposure, not value",
-        "venue total $1,074.18 covers the stablecoin balance and perp PnL only; this account also holds $0.27 of other assets \u2014 the value shown is the whole account"
+        "venue total $1,074.17 covers the stablecoin balance and perp PnL only; this account also holds $0.27 of other assets \u2014 the value shown is the whole account"
       ]
     },
     {
@@ -95,13 +95,13 @@
       "l1_address": "0xe83ECEe6ad078a64F641BdA924c841Fd0F7D58f9",
       "ok": true,
       "error": null,
-      "usd_total": 1163.12,
+      "usd_total": 1163.13,
       "usd_total_source": "venue",
-      "venue_total_usd": 1163.12,
+      "venue_total_usd": 1163.13,
       "owned_fraction": 1.0,
       "pool": null,
       "collateral_usd": 1162.462045,
-      "available_usd": 1156.168687,
+      "available_usd": 1156.188155,
       "positions": [
         {
           "asset": "USDG",
@@ -115,9 +115,9 @@
           "kind": "perp",
           "side": "short",
           "amount": -1.57,
-          "usd": 6.95,
+          "usd": 6.94,
           "entry": 4.8457,
-          "unrealized_pnl": 0.657189,
+          "unrealized_pnl": 0.666923,
           "liquidation_price": 665.417300386715
         }
       ],
@@ -136,27 +136,27 @@
       "l1_address": "0xe83ECEe6ad078a64F641BdA924c841Fd0F7D58f9",
       "ok": true,
       "error": null,
-      "usd_total": 170161.26,
+      "usd_total": 169445.9,
       "usd_total_source": "venue+holdings",
-      "venue_total_usd": 21489.67,
+      "venue_total_usd": 21193.62,
       "owned_fraction": 1.0,
       "pool": null,
       "collateral_usd": 22837.870477,
-      "available_usd": 12202.192767,
+      "available_usd": 11952.825991,
       "positions": [
         {
           "asset": "ETH",
           "kind": "balance",
           "amount": 41.16107287,
-          "price_usd": 2696.875,
-          "usd": 111006.27
+          "price_usd": 2683.19,
+          "usd": 110442.98
         },
         {
           "asset": "LIT",
           "kind": "balance",
           "amount": 4563.88554199,
-          "price_usd": 4.4211,
-          "usd": 20177.39
+          "price_usd": 4.4173,
+          "usd": 20160.05
         },
         {
           "asset": "USDC",
@@ -169,18 +169,22 @@
           "asset": "LIT",
           "kind": "staked",
           "amount": 3955.55998641,
-          "price_usd": 4.4211,
-          "usd": 17487.93,
-          "pool": 281474976624800
+          "price_usd": 4.4173,
+          "usd": 17649.25,
+          "principal_usd": 17472.9,
+          "pool": 281474976624800,
+          "shares": 381277497.0,
+          "value_amount": 3995.484474127435,
+          "unlocking": 0
         },
         {
           "asset": "KAITO",
           "kind": "perp",
           "side": "long",
           "amount": 2095.5,
-          "usd": 702.62,
+          "usd": 698.72,
           "entry": 0.37064,
-          "unrealized_pnl": -74.05497,
+          "unrealized_pnl": -77.9526,
           "liquidation_price": null
         },
         {
@@ -188,9 +192,9 @@
           "kind": "perp",
           "side": "long",
           "amount": 138673.9,
-          "usd": 13929.79,
+          "usd": 13737.04,
           "entry": 0.10546,
-          "unrealized_pnl": -695.349794,
+          "unrealized_pnl": -888.106515,
           "liquidation_price": null
         },
         {
@@ -198,9 +202,9 @@
           "kind": "perp",
           "side": "long",
           "amount": 4208.0,
-          "usd": 4440.41,
+          "usd": 4413.14,
           "entry": 1.09195,
-          "unrealized_pnl": -154.520804,
+          "unrealized_pnl": -181.788644,
           "liquidation_price": null
         },
         {
@@ -208,19 +212,19 @@
           "kind": "perp",
           "side": "long",
           "amount": 5657.7,
-          "usd": 25013.26,
+          "usd": 24991.76,
           "entry": 4.5205,
-          "unrealized_pnl": -562.438121,
-          "liquidation_price": 1.2241153069147916
+          "unrealized_pnl": -583.937381,
+          "liquidation_price": 1.2741516286412566
         },
         {
           "asset": "AZTEC",
           "kind": "perp",
           "side": "long",
           "amount": 93574.0,
-          "usd": 1858.85,
+          "usd": 1826.38,
           "entry": 0.01858,
-          "unrealized_pnl": 120.24259,
+          "unrealized_pnl": 87.772412,
           "liquidation_price": null
         },
         {
@@ -228,9 +232,9 @@
           "kind": "perp",
           "side": "long",
           "amount": 214.7,
-          "usd": 40.68,
+          "usd": 40.98,
           "entry": 0.18035,
-          "unrealized_pnl": 1.958064,
+          "unrealized_pnl": 2.260791,
           "liquidation_price": null
         },
         {
@@ -238,16 +242,17 @@
           "kind": "perp",
           "side": "long",
           "amount": 6862.8,
-          "usd": 3690.75,
+          "usd": 3672.28,
           "entry": 0.53546,
-          "unrealized_pnl": 15.95958,
+          "unrealized_pnl": -2.501352,
           "liquidation_price": null
         }
       ],
       "notes": [
         "7 of 46 markets nonzero",
+        "the 3,955.5600 LIT staked is backed by 3,995.4845 LIT of pool shares \u2014 +39.9245 LIT (+1.01%) of accrued yield, counted as value",
         "venue total = collateral + unrealized PnL; open position notional is exposure, not value",
-        "venue total $21,489.67 covers the stablecoin balance and perp PnL only; this account also holds $148,671.59 of other assets \u2014 the value shown is the whole account",
+        "venue total $21,193.62 covers the stablecoin balance and perp PnL only; this account also holds $148,252.28 of other assets \u2014 the value shown is the whole account",
         "UNI appears only in the venue's locked_balance and is NOT counted \u2014 this account's value is understated"
       ]
     },
@@ -261,13 +266,13 @@
       "l1_address": "0xe83ECEe6ad078a64F641BdA924c841Fd0F7D58f9",
       "ok": true,
       "error": null,
-      "usd_total": 5664.24,
+      "usd_total": 5656.21,
       "usd_total_source": "venue",
-      "venue_total_usd": 5664.24,
+      "venue_total_usd": 5656.21,
       "owned_fraction": 1.0,
       "pool": null,
       "collateral_usd": 5575.867395,
-      "available_usd": 4118.706606,
+      "available_usd": 4112.280259,
       "positions": [
         {
           "asset": "USDG",
@@ -281,10 +286,10 @@
           "kind": "perp",
           "side": "long",
           "amount": 1746.29,
-          "usd": 7727.68,
+          "usd": 7719.65,
           "entry": 4.3746,
-          "unrealized_pnl": 88.375714,
-          "liquidation_price": 1.342742328021119
+          "unrealized_pnl": 80.34278,
+          "liquidation_price": 1.3427423280211186
         }
       ],
       "notes": [
@@ -302,9 +307,9 @@
       "l1_address": "0xe83ECEe6ad078a64F641BdA924c841Fd0F7D58f9",
       "ok": true,
       "error": null,
-      "usd_total": 92770.86,
+      "usd_total": 92603.24,
       "usd_total_source": "venue",
-      "venue_total_usd": 92770.86,
+      "venue_total_usd": 92603.24,
       "owned_fraction": 0.6117009999999999,
       "pool": {
         "name": "Christ is King",
@@ -318,7 +323,7 @@
         "share_price": 0.0013563525266991117
       },
       "collateral_usd": 93333.979349,
-      "available_usd": 82170.736934,
+      "available_usd": 82051.739468,
       "positions": [
         {
           "asset": "USDC",
@@ -332,9 +337,9 @@
           "kind": "perp",
           "side": "long",
           "amount": 2127.5,
-          "usd": 713.35,
+          "usd": 709.39,
           "entry": 0.37064,
-          "unrealized_pnl": -75.18585,
+          "unrealized_pnl": -79.143,
           "liquidation_price": null
         },
         {
@@ -342,9 +347,9 @@
           "kind": "perp",
           "side": "long",
           "amount": 32754.6,
-          "usd": 3290.2,
+          "usd": 3244.67,
           "entry": 0.10539,
-          "unrealized_pnl": -161.81571,
+          "unrealized_pnl": -207.344604,
           "liquidation_price": null
         },
         {
@@ -352,9 +357,9 @@
           "kind": "perp",
           "side": "long",
           "amount": 8036.9,
-          "usd": 8480.78,
+          "usd": 8428.7,
           "entry": 1.06522,
-          "unrealized_pnl": -80.288631,
+          "unrealized_pnl": -132.367743,
           "liquidation_price": null
         },
         {
@@ -362,9 +367,9 @@
           "kind": "perp",
           "side": "long",
           "amount": 3538.77,
-          "usd": 15645.26,
+          "usd": 15631.81,
           "entry": 4.6054,
-          "unrealized_pnl": -652.241642,
+          "unrealized_pnl": -665.688968,
           "liquidation_price": null
         },
         {
@@ -372,9 +377,9 @@
           "kind": "perp",
           "side": "long",
           "amount": 15219.7,
-          "usd": 8539.01,
+          "usd": 8593.19,
           "entry": 0.60695,
-          "unrealized_pnl": -698.650049,
+          "unrealized_pnl": -644.467917,
           "liquidation_price": null
         },
         {
@@ -382,9 +387,9 @@
           "kind": "perp",
           "side": "long",
           "amount": 368407.0,
-          "usd": 7318.41,
+          "usd": 7190.57,
           "entry": 0.017399,
-          "unrealized_pnl": 908.556973,
+          "unrealized_pnl": 780.719744,
           "liquidation_price": null
         },
         {
@@ -392,9 +397,9 @@
           "kind": "perp",
           "side": "long",
           "amount": 21720.6,
-          "usd": 4115.4,
+          "usd": 4146.03,
           "entry": 0.18082,
-          "unrealized_pnl": 187.849715,
+          "unrealized_pnl": 218.475761,
           "liquidation_price": null
         },
         {
@@ -402,9 +407,9 @@
           "kind": "perp",
           "side": "long",
           "amount": 3561.8,
-          "usd": 1915.5,
+          "usd": 1905.92,
           "entry": 0.53536,
-          "unrealized_pnl": 8.655174,
+          "unrealized_pnl": -0.926068,
           "liquidation_price": null
         }
       ],
@@ -487,28 +492,28 @@
     }
   ],
   "totals": {
-    "usd_total": 235317.45,
+    "usd_total": 234490.27,
     "cash_usd": 88004.2,
-    "crypto_usd": 236931.48,
+    "crypto_usd": 236104.28,
     "displayed_accounts": 8,
-    "usd_total_gross": 271340.28,
-    "delegated_usd": 36022.83
+    "usd_total_gross": 270448.02,
+    "delegated_usd": 35957.75
   },
   "exposure": {
-    "usd": 236897.5,
+    "usd": 235963.9,
     "label": "net crypto (spot + perp), all readable accounts",
     "components": [
       {
         "asset": "AZTEC",
         "net_amount": 318928.9303069999,
-        "price_usd": 0.019865,
-        "usd": 6335.53
+        "price_usd": 0.019518,
+        "usd": 6224.86
       },
       {
         "asset": "XPL",
         "net_amount": 158709.9215746,
-        "price_usd": 0.10045,
-        "usd": 15942.41
+        "price_usd": 0.09906,
+        "usd": 15721.81
       },
       {
         "asset": "LIT",
@@ -519,38 +524,38 @@
       {
         "asset": "CASHCAT",
         "net_amount": 13501.2127406,
-        "price_usd": 0.189474,
-        "usd": 2558.12
+        "price_usd": 0.190871,
+        "usd": 2576.99
       },
       {
         "asset": "JTO",
         "net_amount": 9309.9057097,
-        "price_usd": 0.56105,
-        "usd": 5223.32
+        "price_usd": 0.56461,
+        "usd": 5256.46
       },
       {
         "asset": "FIL",
         "net_amount": 9124.1797669,
-        "price_usd": 1.055231,
-        "usd": 9628.11
+        "price_usd": 1.04875,
+        "usd": 9568.98
       },
       {
         "asset": "PONS",
         "net_amount": 9041.5566218,
-        "price_usd": 0.537791,
-        "usd": 4862.47
+        "price_usd": 0.535099,
+        "usd": 4838.13
       },
       {
         "asset": "KAITO",
         "net_amount": 3396.8938775,
-        "price_usd": 0.335299,
-        "usd": 1138.98
+        "price_usd": 0.333438,
+        "usd": 1132.65
       },
       {
         "asset": "ETH",
         "net_amount": 41.2522709373,
-        "price_usd": 2696.875,
-        "usd": 111252.22
+        "price_usd": 2683.19,
+        "usd": 110687.68
       },
       {
         "asset": "rhSPY",
@@ -565,9 +570,62 @@
       "rhSPY: no price source \u2014 exposure cannot include it"
     ]
   },
+  "stake": {
+    "pool": 281474976624800,
+    "pool_lit": 113618242.9328232,
+    "total_shares": 10842259445502.0,
+    "lit_per_share": 1.047920348188667e-05,
+    "share_price_usd": 4.9091334746115065e-05,
+    "apy_pct": 255.82917449481116,
+    "sharpe": 2.2523575212476676,
+    "daily_returns": [
+      0.03534162,
+      0.10549763,
+      -0.07351175,
+      0.01831698,
+      0.02157634,
+      0.13894275,
+      0.09441556,
+      0.01979478,
+      -0.05601929,
+      0.05227707,
+      0.02534066,
+      -0.01675899,
+      -0.04522347,
+      -0.01156333,
+      -0.05069946,
+      -0.00830161,
+      0.07858213,
+      -0.08159813,
+      0.07611688,
+      0.04159252,
+      0.04183437,
+      0.01414791,
+      -0.04537307,
+      0.02229795,
+      0.00741278,
+      0.12548938,
+      -0.01518393,
+      -0.11223958,
+      -0.00772095,
+      -0.00905644
+    ],
+    "daily_returns_days": 49,
+    "realised_30d_pct": 39.2273,
+    "staked_lit": 3955.55998641,
+    "value_lit": 3995.48447413,
+    "accrued_lit": 39.92448772,
+    "value_usd": 17649.25,
+    "principal_usd": 17472.9,
+    "accrued_usd": 176.35,
+    "shares": 381277497.0,
+    "share_of_pool_pct": 0.0035165870999164855
+  },
   "notes": [
     "read-only: public RPC + public venue APIs; 1 venue(s) present but not read",
     "exposure nets long and short rows per asset; the TWO numbers differ by design: totals = what it is worth, exposure = what a drop reaches",
-    "pools are partly other people's capital: Christ is King \u2014 92,770.86 pooled, 61.1701% yours \u00b7 $36,022.83 of the gross total is depositors'"
+    "pools are partly other people's capital: Christ is King \u2014 92,603.24 pooled, 61.1701% yours \u00b7 $35,957.75 of the gross total is depositors'",
+    "LIT staking: 3,955.5600 LIT deposited, shares worth 3,995.4845 LIT \u2014 +39.9245 LIT of accrued yield ($176.35), counted as value",
+    "the LIT staking pool reports 255.829% APY (the venue's own pool-wide figure) while its last 30 reported days compounded to +39.2273% \u2014 the headline and the path are different things, and this pool has printed both +12% and -11% days"
   ]
 }

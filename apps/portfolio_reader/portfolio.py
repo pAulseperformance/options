@@ -22,6 +22,11 @@ from __future__ import annotations
 # problem and the account fails on purpose.
 DUST_UNITS = 0.001
 
+# The LIT staking public pool: VENUE-WIDE, where staked LIT is held in custody. Not an operator's
+# trading pool — money here is deposited into a strategy pool and earns (or loses) with it, and a
+# stake is worth what its shares are backed by, not what went in.
+LIT_STAKING_POOL = 281474976624800
+
 STABLES = {"USDC", "USDT", "USDG", "DAI", "PYUSD"}
 
 # The artifact's own freshness rule: a dashboard shows STALE past this age. Positions move
@@ -82,6 +87,47 @@ def normalize_l1(wallet: str, balances: dict, rates: dict, tokens_checked: list[
     }
 
 
+def stake_market(pool_raw: dict | None) -> dict | None:
+    """The LIT staking pool's own economics, from its own account payload.
+
+    One share is backed by `pool LIT / total shares` — the venue's own numbers, so the rate cannot
+    drift from the pool it describes. Verified against the venue's published series: its
+    `daily_return` IS the share-price ratio minus one (a FRACTION, not a percent), so a day of
+    +0.1255 is +12.55% — this pool swings that hard, which is why the advertised APY is shown
+    next to what the last 30 reported days actually compounded to.
+
+    Returns None instead of raising: a stake is a nice-to-have, and a pool read that fails must
+    never take the portfolio down with it.
+    """
+    if not pool_raw:
+        return None
+    info = pool_raw.get("pool_info") or {}
+    lit = next((num(a.get("balance"), 0.0) or 0.0
+                for a in pool_raw.get("assets") or [] if a.get("symbol") == "LIT"), 0.0)
+    total = num(info.get("total_shares"), 0.0) or 0.0
+    if not lit or not total:
+        return None
+    daily = [num(p.get("daily_return"), 0.0) or 0.0
+             for p in info.get("daily_returns") or [] if p.get("daily_return")]
+    prices = [num(p.get("share_price"), 0.0) or 0.0
+              for p in info.get("share_prices") or [] if p.get("share_price")]
+    compounded = 1.0
+    for r in daily[-30:]:
+        compounded *= 1.0 + r
+    return {
+        "pool": pool_raw.get("account_index"),
+        "pool_lit": round(lit, 8),
+        "total_shares": total,
+        "lit_per_share": lit / total,
+        "share_price_usd": prices[-1] if prices else None,
+        "apy_pct": num(info.get("annual_percentage_yield")),
+        "sharpe": num(info.get("sharpe_ratio")),
+        "daily_returns": [round(r, 8) for r in daily[-30:]],
+        "daily_returns_days": len(daily),
+        "realised_30d_pct": round((compounded - 1.0) * 100.0, 4),
+    }
+
+
 def pool_summary(raw: dict) -> dict | None:
     """A public pool's own block — name, fee, the operator's share, APY and Sharpe.
 
@@ -110,7 +156,8 @@ def pool_summary(raw: dict) -> dict | None:
 
 
 def normalize_lighter(raw: dict, index: int, host: str, venue: str, label: str,
-                      rates: dict, role: str = "book") -> dict:
+                      rates: dict, role: str = "book",
+                      stake_market: dict | None = None) -> dict:
     """One Lighter account payload -> an account.
 
     Asset balances become `cash` (stables) or `balance` (everything else); the venue's own
@@ -184,11 +231,41 @@ def normalize_lighter(raw: dict, index: int, host: str, venue: str, label: str,
             stake_notes.append(f"{staked:,.4f} LIT staked in pool {sh.get('public_pool_index')} — "
                                f"no LIT price on this account, so the stake is NOT counted")
             continue
-        positions.append({
+        shares = num(sh.get("shares_amount"), 0.0) or 0.0
+        pool_index = sh.get("public_pool_index")
+        # A stake is worth what its SHARES ARE BACKED BY, not what was paid in — the difference IS
+        # the yield, and it has never appeared on any page. The pool's own LIT-per-share is the
+        # only rate that cannot drift from the pool it came from, so it is used only for the pool
+        # it belongs to; any other pool's stake falls back to its principal.
+        backed = None
+        if stake_market and pool_index == stake_market.get("pool") and shares:
+            backed = shares * stake_market["lit_per_share"]
+        value = backed if backed else staked
+        row = {
             "asset": "LIT", "kind": "staked", "amount": round(staked, 12),
-            "price_usd": price, "usd": round(staked * price, 2),
-            "pool": sh.get("public_pool_index"),
-        })
+            "price_usd": price, "usd": round(value * price, 2),
+            "principal_usd": round(staked * price, 2),
+            "pool": pool_index,
+        }
+        if shares:
+            row["shares"] = shares
+            row["value_amount"] = round(value, 12)
+        # The 3-day cooldown is the sell tell on this venue: a non-empty queue means part of the
+        # stake is on its way out, and the date is when it becomes sellable.
+        unlocks = raw.get("pending_unlocks") or []
+        row["unlocking"] = len(unlocks)
+        if unlocks:
+            # pending_unlocks entries carry `amount` (LIT, falling back to `principal`) and an
+            # `unlock_timestamp` in ms — the moment the 3-day cooldown ends and it is sellable.
+            queued = sum(num(u.get("amount") if u.get("amount") is not None else u.get("principal"),
+                             0.0) or 0.0 for u in unlocks)
+            row["unlock_usd"] = round(queued * price, 2)
+        positions.append(row)
+        if backed and abs(backed - staked) > 1e-9:
+            gain = backed - staked
+            stake_notes.append(
+                f"the {staked:,.4f} LIT staked is backed by {backed:,.4f} LIT of pool shares — "
+                f"{gain:+,.4f} LIT ({gain / staked * 100:+.2f}%) of accrued yield, counted as value")
 
     nonzero = 0
     for p in markets:
@@ -443,7 +520,64 @@ def totals_of(accounts: list[dict]) -> dict:
     return out
 
 
-def build_artifact(accounts: list[dict], prices: dict, fetched_at: str) -> dict:
+def stake_totals(accounts: list[dict], market: dict | None) -> dict | None:
+    """The whole staking position, across accounts, priced from the pool's own share rate."""
+    rows = [p for a in readable_accounts(accounts) for p in (a.get("positions") or [])
+            if p.get("kind") == "staked"]
+    if not rows and not market:
+        return None
+    staked = sum(p.get("amount") or 0.0 for p in rows)
+    value_lit = sum((p.get("value_amount") if p.get("value_amount") is not None
+                     else p.get("amount")) or 0.0 for p in rows)
+    usd = sum(p.get("usd") or 0.0 for p in rows)
+    principal_usd = sum(p.get("principal_usd") if p.get("principal_usd") is not None
+                        else (p.get("usd") or 0.0) for p in rows)
+    shares = sum(p.get("shares") or 0.0 for p in rows)
+    out = dict(market or {})
+    out.update({
+        "staked_lit": round(staked, 8),
+        "value_lit": round(value_lit, 8),
+        "accrued_lit": round(value_lit - staked, 8),
+        "value_usd": round(usd, 2),
+        "principal_usd": round(principal_usd, 2),
+        "accrued_usd": round(usd - principal_usd, 2),
+        "shares": shares,
+    })
+    total = out.get("total_shares")
+    out["share_of_pool_pct"] = (shares / total * 100.0) if (shares and total) else None
+    return out
+
+
+def history_row(artifact: dict) -> dict:
+    """One day's line for the book's own history — the numbers only a memory can show.
+
+    Pure, so it can be tested without a filesystem, and complete: a day read while an account was
+    failing is recorded with `complete: false` rather than skipped, because a series that hides its
+    own gaps is worse than no series.
+    """
+    t = artifact.get("totals") or {}
+    x = artifact.get("exposure") or {}
+    stake = artifact.get("stake") or {}
+    return {
+        "date": (artifact.get("fetched_at") or "")[:10],
+        "fetched_at": artifact.get("fetched_at"),
+        "usd_total": t.get("usd_total"),
+        "usd_total_gross": t.get("usd_total_gross"),
+        "delegated_usd": t.get("delegated_usd"),
+        "exposure_usd": x.get("usd"),
+        "cash_usd": t.get("cash_usd"),
+        "accounts": t.get("displayed_accounts"),
+        "complete": artifact.get("complete"),
+        "staked_lit": stake.get("staked_lit"),
+        "stake_accrued_lit": stake.get("accrued_lit"),
+        "by_account": {a.get("label") or a.get("venue"):
+                       round((a.get("usd_total") or 0.0) * (a.get("owned_fraction") or 1.0), 2)
+                       for a in artifact.get("accounts") or [] if a.get("read") is not False},
+    }
+
+
+def build_artifact(accounts: list[dict], prices: dict, fetched_at: str,
+                   stake_market: dict | None = None) -> dict:
     """Assemble the published artifact. `fetched_at` is passed in so this stays pure."""
     complete = all(a.get("ok") for a in readable_accounts(accounts))
     totals = totals_of(accounts)
@@ -464,6 +598,20 @@ def build_artifact(accounts: list[dict], prices: dict, fetched_at: str) -> dict:
         notes.append(f"pools are partly other people's capital: {named}"
                      + (f" · ${totals['delegated_usd']:,.2f} of the gross total is depositors'"
                         if totals.get("delegated_usd") else ""))
+    stake = stake_totals(accounts, stake_market)
+    if stake and stake.get("staked_lit"):
+        line = (f"LIT staking: {stake['staked_lit']:,.4f} LIT deposited, shares worth "
+                f"{stake['value_lit']:,.4f} LIT")
+        if stake.get("accrued_lit"):
+            line += (f" — {stake['accrued_lit']:+,.4f} LIT of accrued yield "
+                     f"(${stake['accrued_usd']:,.2f}), counted as value")
+        notes.append(line)
+        if stake.get("apy_pct") is not None:
+            notes.append(
+                f"the LIT staking pool reports {stake['apy_pct']:g}% APY (the venue's own pool-wide "
+                f"figure) while its last {len(stake.get('daily_returns') or [])} reported days "
+                f"compounded to {stake.get('realised_30d_pct'):+g}% — the headline and the path "
+                f"are different things, and this pool has printed both +12% and -11% days")
     if not complete:
         notes.insert(0, "INCOMPLETE — at least one readable account failed; totals and exposure "
                         "UNDERSTATE reality. coverage_cli refuses this artifact by design.")
@@ -478,5 +626,6 @@ def build_artifact(accounts: list[dict], prices: dict, fetched_at: str) -> dict:
         "accounts": accounts,
         "totals": totals,
         "exposure": exposure_of(accounts, prices.get("rates") or {}),
+        "stake": stake,
         "notes": notes,
     }

@@ -312,3 +312,121 @@ def test_an_unpriceable_stake_is_named_and_skipped_rather_than_poisoning_the_art
     assert a["ok"] is True                     # a missing price must NOT fail the account
     assert [p for p in a["positions"] if p["kind"] == "staked"] == []
     assert any("no LIT price on this account" in n for n in a["notes"])
+
+
+POOL = 281474976624800
+POOL_RAW = {
+    "account_index": POOL,
+    "assets": [{"symbol": "LIT", "balance": "113618242.93282320", "margin_balance": "0"}],
+    "pool_info": {
+        "total_shares": 10842259445502,
+        "operator_shares": 10000000000,
+        "annual_percentage_yield": 255.82917449481116,
+        "sharpe_ratio": 2.2523575212476676,
+        "share_prices": [{"timestamp": 1, "share_price": 5.7104613051423334e-05}],
+        "daily_returns": [{"timestamp": 1, "daily_return": 0.1254893753378319},
+                          {"timestamp": 2, "daily_return": -0.11223957971666165}],
+    },
+}
+
+
+def staking_account(stake_market=None):
+    raw = {
+        "account_index": 728660, "l1_address": WALLET,
+        "total_asset_value": "1000.0", "collateral": "1000.0",
+        "assets": [{"symbol": "USDC", "balance": "0.000000", "margin_balance": "1000.0"}],
+        "positions": [{"symbol": "LIT", "sign": 1, "position": "100.0",
+                       "position_value": "400.0", "unrealized_pnl": "0.0"}],   # LIT mark = 4.00
+        "shares": [{"public_pool_index": POOL, "shares_amount": 381277497,
+                    "principal_amount": "3955.55998641"}],
+    }
+    return core.normalize_lighter(raw, 728660, "https://x", "lighter-mainnet", "L", RATES,
+                                  "book", stake_market)
+
+
+def test_the_stake_market_reads_the_pools_own_rate_and_series():
+    m = core.stake_market(POOL_RAW)
+    assert m["pool"] == POOL
+    assert m["lit_per_share"] == pytest.approx(113618242.93282320 / 10842259445502)
+    assert m["apy_pct"] == pytest.approx(255.82917449481116)
+    # the venue's daily_return IS the share-price ratio minus one (a FRACTION, not a percent)
+    # rounded to 4dp on purpose: this is a displayed number, not an intermediate
+    assert m["realised_30d_pct"] == pytest.approx(
+        ((1.1254893753378319 * 0.8877604202833384) - 1) * 100, abs=1e-3)
+    assert m["realised_30d_pct"] < 0                     # two reported days and it is already down
+    assert core.stake_market(None) is None
+    assert core.stake_market({"assets": [], "pool_info": {}}) is None   # no zero-division
+
+
+def test_a_stake_is_valued_by_what_its_shares_are_backed_by_not_by_its_principal():
+    m = core.stake_market(POOL_RAW)
+    a = staking_account(m)
+    st = [p for p in a["positions"] if p["kind"] == "staked"][0]
+    assert st["amount"] == pytest.approx(3955.55998641)                  # what went in
+    assert st["value_amount"] == pytest.approx(381277497 * m["lit_per_share"])   # 3995.48 LIT
+    assert st["value_amount"] > st["amount"]                              # the yield, in LIT
+    assert st["usd"] == pytest.approx(round(st["value_amount"] * 4.0, 2))
+    assert st["principal_usd"] == pytest.approx(round(3955.55998641 * 4.0, 2))
+    assert st["shares"] == 381277497 and st["pool"] == POOL
+    assert any("accrued yield, counted as value" in n for n in a["notes"])
+    # and the account's worth moves with it, because the stake is real value
+    assert a["usd_total"] == pytest.approx(round(1000.0 + st["usd"], 2))
+
+
+def test_a_stake_in_another_pool_falls_back_to_its_principal():
+    """The pool's rate describes ONE pool — applying it to a different pool would invent money."""
+    other = dict(POOL_RAW)
+    other["account_index"] = 999
+    m = core.stake_market(other)
+    a = staking_account(m)
+    st = [p for p in a["positions"] if p["kind"] == "staked"][0]
+    assert st["value_amount"] == pytest.approx(3955.55998641)
+    assert st["usd"] == pytest.approx(round(3955.55998641 * 4.0, 2))
+    assert not any("accrued yield" in n for n in a["notes"])
+
+
+def test_stake_totals_adds_up_the_position_and_its_share_of_the_pool():
+    m = core.stake_market(POOL_RAW)
+    a = staking_account(m)
+    t = core.stake_totals([a], m)
+    assert t["staked_lit"] == pytest.approx(3955.55998641)
+    assert t["value_lit"] == pytest.approx(381277497 * m["lit_per_share"])
+    assert t["accrued_lit"] == pytest.approx(t["value_lit"] - t["staked_lit"])
+    assert t["accrued_usd"] == pytest.approx(round(t["accrued_lit"] * 4.0, 2))
+    assert t["share_of_pool_pct"] == pytest.approx(381277497 / 10842259445502 * 100)
+    assert t["apy_pct"] == pytest.approx(255.82917449481116)
+    assert core.stake_totals([], None) is None
+
+
+def test_the_stake_note_puts_the_headline_apy_next_to_what_actually_happened():
+    m = core.stake_market(POOL_RAW)
+    art = core.build_artifact([staking_account(m)], {"rates": {}, "source": "fixture",
+                                                     "fetched_at": None}, "2026-09-28T19:00:00+00:00", m)
+    notes = " ".join(art["notes"])
+    assert "255.829" in notes and "reports" in notes
+    assert "compounded to" in notes
+    assert "accrued yield" in notes
+
+
+def test_history_row_is_one_day_of_the_book_and_keeps_its_own_failures():
+    art = {
+        "fetched_at": "2026-09-28T19:02:42+00:00", "complete": False,
+        "totals": {"usd_total": 235317.45, "usd_total_gross": 271340.28, "delegated_usd": 36022.83,
+                   "cash_usd": 88004.20, "displayed_accounts": 8},
+        "exposure": {"usd": 236897.50},
+        "stake": {"staked_lit": 3955.55998641, "accrued_lit": 39.92},
+        "accounts": [
+            {"label": "Lighter · mainnet", "usd_total": 1074.45, "owned_fraction": 1.0},
+            {"label": "Lighter · pool · Christ is King", "usd_total": 92770.86,
+             "owned_fraction": 0.611701},
+            {"label": "Derive v2 (Lyra)", "usd_total": None, "read": False},
+        ],
+    }
+    r = core.history_row(art)
+    assert r["date"] == "2026-09-28"
+    assert r["usd_total"] == 235317.45 and r["exposure_usd"] == 236897.50
+    assert r["complete"] is False                       # a bad day is recorded, not skipped
+    assert r["by_account"]["Lighter · mainnet"] == 1074.45
+    # the pool is recorded at the OPERATOR'S share, not its gross equity
+    assert r["by_account"]["Lighter · pool · Christ is King"] == pytest.approx(56748.03, abs=1.0)
+    assert "Derive v2 (Lyra)" not in r["by_account"]    # a placeholder venue is not an account

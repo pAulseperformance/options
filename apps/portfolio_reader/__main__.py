@@ -146,21 +146,56 @@ def main(argv: list[str] | None = None) -> int:
         accounts.append(core.failed_account("ethereum-l1", "spot · Ethereum L1",
                                             f"{type(e).__name__}: {e}"))
 
+    # The LIT staking pool's own economics, read once so a stake can be valued by what its shares
+    # are BACKED by rather than by what went in. Soft-fail on purpose: a stake is a nice-to-have
+    # and a pool read that fails must not take the portfolio down with it.
+    market = None
+    try:
+        market = core.stake_market(
+            asyncio.run(_lighter_account("https://mainnet.zklighter.elliot.ai",
+                                         core.LIT_STAKING_POOL)))
+    except Exception as e:  # noqa: BLE001
+        print(f"  ! LIT staking pool read failed ({type(e).__name__}: {e}) — stakes are counted "
+              f"at their principal only")
+
     for venue, label, host, index, role in LIGHTER:
         try:
             raw = asyncio.run(_lighter_account(host, index))
             accounts.append(core.normalize_lighter(raw, index, host, venue, label, rates,
-                                                    role))
+                                                   role, market))
         except Exception as e:  # noqa: BLE001
             accounts.append(core.failed_account(venue, label, f"{type(e).__name__}: {e}"))
 
     accounts.append(core.placeholder_derive())
 
-    artifact = core.build_artifact(accounts, prices, fetched_at)
+    artifact = core.build_artifact(accounts, prices, fetched_at, market)
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(artifact, indent=2) + "\n")
+
+    # The book's own memory. One row per DAY, the day's last read: the reader runs on demand, so a
+    # row per run would be noise, and the question this answers — is the book growing? — is daily.
+    # A failed day is recorded as such rather than skipped: a series that hides its gaps lies.
+    hist = out.parent / "portfolio_history.jsonl"
+    row = core.history_row(artifact)
+    try:
+        rows = []
+        if hist.exists():
+            for line in hist.read_text().splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    rows.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue          # a torn line is dropped, never allowed to kill the series
+        rows = [r for r in rows if r.get("date") != row["date"]] + [row]
+        rows.sort(key=lambda r: r.get("date") or "")
+        hist.write_text("".join(json.dumps(r, sort_keys=True) + "\n" for r in rows))
+        print(f"  history {len(rows)} day(s) · {hist.name}")
+    except OSError as e:  # noqa: BLE001
+        print(f"  ! could not append history: {e}")
 
     for a in artifact["accounts"]:
         val = "—" if a.get("usd_total") is None else f"${a['usd_total']:,.2f}"
@@ -175,6 +210,13 @@ def main(argv: list[str] | None = None) -> int:
                      if c.get("usd") is not None else f"{c['asset']} ?"
                      for c in x["components"]) or "nothing"
     print(f"  total ${t['usd_total']:,.2f} · exposure ${x['usd']:,.2f} ({comp})")
+    st = artifact.get("stake") or {}
+    if st.get("staked_lit"):
+        print(f"  LIT staked {st['staked_lit']:,.4f} → shares are backed by {st['value_lit']:,.4f} LIT "
+              f"({st['accrued_lit']:+,.4f} accrued, ${st['accrued_usd']:,.2f}) · "
+              f"${st['value_usd']:,.2f} · {st['share_of_pool_pct']:.4g}% of the pool · "
+              f"venue says {st['apy_pct']:g}% APY vs {st['realised_30d_pct']:+g}% over the last "
+              f"{len(st['daily_returns'])} reported days")
     if not artifact["complete"]:
         print("  INCOMPLETE — at least one account failed; coverage_cli will refuse this artifact")
     print(f"wrote {out}")
