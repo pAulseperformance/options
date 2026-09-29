@@ -1,17 +1,18 @@
 // Public orderbook depth probe on Derive. No auth, no account, no capital.
 // Channels are public per docs; we read real bids/asks or find there are none.
-const WS = "wss://api.derive.xyz/v3/ws";
+// Env overrides: WS_URL=<ws url> TARGETS=a,b,c — point at testnet (populated) as a positive control.
+const WS = process.env.WS_URL || "wss://api.derive.xyz/v3/ws";
 
-const TARGETS = [
+const TARGETS = (process.env.TARGETS ? process.env.TARGETS.split(",") : [
   "ETH-PERP",                  // control: a live perp must have a book
   "BTC-PERP",                  // control 2
   "ETH-20270924-3000-P",       // 363d put  (the insurance leg)
   "ETH-20270924-3000-C",       // 363d call
-  "ETH-20270625-3000-P",       // 272d put
+  "ETH-[JP_MYNUMBER]-P",       // 272d put
   "ETH-20270326-3000-P",       // 181d put
   "ETH-20261225-2800-P",       // 90d put
   "ETH-20261002-2800-C",       // 6d call (near-dated comparison)
-];
+]);
 
 const channels = TARGETS.map((t) => `orderbook.${t}.1.10`);
 const seen = new Map(); // instrument -> snapshot

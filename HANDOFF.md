@@ -217,3 +217,13 @@ venue (fills at ~$2,697). Port notes for v3: `public/get_instruments` is gone �
 `get_all_instruments` / `get_all_live_instruments`; option tickers take `expiry_date=YYYYMMDD`;
 `tx_status` → `batch_status`; currency data reshaped by risk universes
 (docs.derive.xyz/migrating/breaking-changes).
+
+**V3 recon captured (2026-09-29) — the port is now a bounded job.** The v3 WS surface is
+**source-compatible with the v2 reader** (same `orderbook.<instr>.1.10` channels, same subscribe
+acks, same snapshot frames) — verified against **populated testnet** (`testnet.api.derive.xyz/v3`:
+3,568 instruments incl. every long-dated ETH put family; 7/8 probe targets returned books), so the
+reader port can be dry-run end-to-end before migration day. `ops/derive_book_probe.mjs` now takes
+`WS_URL` / `TARGETS` env overrides. v3 also carries a staged **DRV-USDC** spot instrument (DRV is a
+v2 spot currency too). Full recon (catalogue shapes, ticker routes, gotchas) is in skill
+`derive-platform` → `references/v2-to-v3-migration.md`. DRV token dossier filed at
+`Trading-Vault/Research/Crypto/DRV.md` (open item #5 remains the reminder).
