@@ -18,6 +18,10 @@ until Oct 4** (see tail). **The adapter now reads both deployments automatically
 testnet-validated 2026-09-29 (see tail); it switches to v3 the moment v3 quotes.** Without fresh quotes the plan still
 reports **no venue available** — correct, and the point of the design.
 
+**AT REST (2026-09-29):** the work is done — three cron watches carry the next events (wake-up map
+in the tail); nothing manual is pending. An empty long-dated book is the market being closed, not
+a fault: the plan keeps publishing **no venue available** until a maker returns.
+
 ## Decisions already made (do not re-derive)
 
 - **Options only.** A perp-short mechanism was built and then deliberately removed: it belongs to
@@ -246,3 +250,24 @@ quotes yet (`DERIVE PIPELINE MOVED TO V3` fires once). Evidence: **testnet dry-r
 long-dated put). Fixtures recorded: `tests/fixtures/derive_v3_{testnet,prod}_ws_scan_1.json`;
 suite 85 green. Also fixed a pre-existing red test: the portfolio schema was missing the `locked`
 position kind the reader has published since 2026-09-28.
+
+**AT REST — the wake-up map (stamped 2026-09-29).** Nothing in this repo needs active work. The
+three watches are the standing machinery, all enabled and green at stamping (the 30-min watch had
+already run this ported code on schedule, silently, before this note was written):
+
+| watch | cadence | fires when |
+|---|---|---|
+| Derive Book Watch | every 30m (`e6937ec4db9f`) | a long-dated put book appears (the buy window) — or the published deployment moves |
+| Derive V3 Watch | daily 9:05 (`b4b4b982d755`) | vote close / migration notice / v3 starts trading (+ DRV reminder, open item #5) |
+| Hyperliquid Options Watch | daily 9am (`bf519cd6a89e`) | HL native options appear / HIP-4 diff / new Hypercall post |
+
+All three deliver to Signals; silence is the contract (stdout only on a transition), and a broken
+watch fails loud (one line + exit 1) — so silence means green, not blind.
+
+**What wakes this project next** (any one of): (1) *book returned* — measure at action time,
+re-run coverage; buying stays a human action on the venue; (2) *v3 starts trading, or the
+migration notice* — verify the ported reader against a live v3 book on the first real quote run,
+re-run `docs/venue-risk.md` (its chain analysis gets superseded at migration), then price
+insurance from the new venue; (3) *the DRV reminder fires with the v3 watch* — the deferred token
+entry decision (open item #5). If no alert fires, nothing is wrong — and `git status` showing
+`data/quotes.json` / `data/coverage.json` modified is the 30-min watch refreshing them, expected.
