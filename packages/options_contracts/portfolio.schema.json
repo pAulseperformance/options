@@ -29,6 +29,7 @@
         "source": { "type": ["string", "null"] },
         "fetched_at": { "type": ["string", "null"] },
         "rates": { "type": "object" },
+        "rh_marks_error": { "type": "string" },
         "error": { "type": "string" }
       }
     },

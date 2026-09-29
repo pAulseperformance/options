@@ -84,14 +84,17 @@ def fetch_prices() -> dict:
     """
     def coinbase() -> dict:
         rates = {}
-        for sym in ("ETH", "BTC"):
+        # UNI is here because an account holds it and the venue has no market for it: the only
+        # price that exists for it is an exchange's. ETH and BTC are the assets the L1 wallet and
+        # the books' margins are quoted in.
+        for sym in ("ETH", "BTC", "UNI"):
             r = _get(f"https://api.coinbase.com/v2/prices/{sym}-USD/spot")
             rates[sym] = float(r["data"]["amount"])
         return rates
 
     def binance() -> dict:
         rates = {}
-        for sym, pair in (("ETH", "ETHUSDT"), ("BTC", "BTCUSDT")):
+        for sym, pair in (("ETH", "ETHUSDT"), ("BTC", "BTCUSDT"), ("UNI", "UNIUSDT")):
             r = _get(f"https://api.binance.com/api/v3/ticker/price?symbol={pair}")
             rates[sym] = float(r["price"])
         return rates
@@ -104,6 +107,32 @@ def fetch_prices() -> dict:
         except Exception as e:  # noqa: BLE001 - try the next source, then give up loudly
             errors.append(f"{name}: {type(e).__name__}: {e}")
     raise RuntimeError("no price source reachable — " + " | ".join(errors))
+
+
+RH_MARKS_URL = "https://api.rh.lighter.xyz/api/v1/orderBookDetails"
+
+
+def fetch_rh_marks() -> dict:
+    """Prices for the RH-chain venue's OWN markets, keyed the way the ACCOUNT names the asset.
+
+    The RH venue lists `SPY` where an account's asset row says `rhSPY`, so the tokenised-RH prefix
+    is stripped and both spellings are registered. A tokenised equity that no exchange quotes is
+    still priced by the venue that makes its market — the book it prints is the only price there is.
+    """
+    d = _get(RH_MARKS_URL)
+    out: dict = {}
+    for group in ("spot_order_book_details", "order_book_details"):
+        for m in d.get(group) or []:
+            sym = str(m.get("symbol") or "").split("/")[0].strip().upper()
+            px = m.get("mark_price") or m.get("last_trade_price")
+            try:
+                px = float(px)
+            except (TypeError, ValueError):
+                continue
+            if sym and px > 0:
+                out[sym] = px
+                out[f"rh{sym}"] = px
+    return out
 
 
 async def _lighter_account(host: str, index: int) -> dict:
@@ -138,6 +167,15 @@ def main(argv: list[str] | None = None) -> int:
         prices = {"source": None, "fetched_at": fetched_at, "rates": {},
                   "error": f"{type(e).__name__}: {e}"}
         rates = {}
+
+    # The RH chain's own book joins the rates: a holding no exchange quotes — a tokenised equity
+    # like rhSPY — is priced by the venue that makes its market. Soft-fail on purpose: a venue read
+    # that breaks must not take the run down, and an unpriced holding is named by the reader
+    # exactly as it was before.
+    try:
+        rates.update(fetch_rh_marks())
+    except Exception as e:  # noqa: BLE001
+        prices["rh_marks_error"] = f"{type(e).__name__}: {e}"
 
     try:
         accounts.append(core.normalize_l1(args.wallet, fetch_l1_balances(args.wallet), rates,

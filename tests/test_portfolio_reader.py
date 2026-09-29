@@ -257,6 +257,68 @@ def test_a_nonzero_holding_without_a_price_fails_the_account_honestly():
     assert a["usd_total"] is None
 
 
+# --------------------------------------------------------------- locked-only holdings and RH marks
+UNI_RAW = {
+    "account_index": 728660, "l1_address": WALLET,
+    "total_asset_value": "20898.076373999997", "collateral": "22839.335445",
+    "available_balance": "12923.75",
+    "assets": [
+        {"symbol": "ETH", "balance": "0.00000000", "locked_balance": "0.00000000",
+         "margin_balance": "41.16107287", "margin_mode": "enabled"},
+        {"symbol": "USDC", "balance": "0.000000", "locked_balance": "1744.165700",
+         "margin_balance": "22839.33544582509", "margin_mode": "enabled"},
+        {"symbol": "UNI", "balance": "0.00000000", "locked_balance": "30.48000000",
+         "margin_balance": "0.00000000", "margin_mode": "disabled"},
+    ],
+    "positions": [],
+}
+
+
+def test_a_locked_only_holding_that_a_feed_prices_is_counted_not_merely_named():
+    """It used to be left out of the totals even when a price existed. That was policy, not data:
+    the venue reports it as an asset of the account, it is simply not spendable balance."""
+    rates = dict(RATES, UNI=8.588)
+    a = core.normalize_lighter(UNI_RAW, 728660, "https://mainnet.zklighter.elliot.ai",
+                               "lighter-mainnet", "Lighter · mainnet · main account", rates)
+    uni = [p for p in a["positions"] if p["asset"] == "UNI"][0]
+    assert uni["kind"] == "locked"
+    assert uni["amount"] == pytest.approx(30.48)
+    assert uni["usd"] == pytest.approx(round(30.48 * 8.588, 2))
+    # Counted like any other holding the venue's total omits — the ETH on the same account too.
+    eth = [p for p in a["positions"] if p["asset"] == "ETH"][0]
+    assert a["usd_total"] == pytest.approx(
+        round(a["venue_total_usd"] + eth["usd"] + uni["usd"], 2))
+    assert a["usd_total_source"] == "venue+holdings"
+    assert any("held in the venue's locked_balance" in n and "IS counted" in n for n in a["notes"])
+    assert not any("no feed prices it" in n for n in a["notes"])
+
+
+def test_a_locked_only_holding_no_feed_prices_is_still_named_and_left_out():
+    """The other half of the rule: never valued at a guess."""
+    a = core.normalize_lighter(UNI_RAW, 728660, "https://mainnet.zklighter.elliot.ai",
+                               "lighter-mainnet", "Lighter · mainnet · main account", RATES)
+    assert not [p for p in a["positions"] if p["asset"] == "UNI"]
+    assert any("UNI appears only in the venue's locked_balance" in n
+               and "no feed prices it" in n for n in a["notes"])
+
+
+def test_rh_marks_price_an_asset_by_the_name_the_account_uses():
+    """The RH venue lists SPY; the account's asset row says rhSPY. Both spellings must resolve, and
+    a market with no price must not invent one."""
+    from portfolio_reader import __main__ as cli
+
+    body = {
+        "spot_order_book_details": [{"symbol": "SPY/USDG", "last_trade_price": 764.83},
+                                    {"symbol": "XAU", "mark_price": None, "last_trade_price": None}],
+        "order_book_details": [{"symbol": "SPY", "mark_price": "764.62"}],
+    }
+    cli._get = lambda url, *a, **k: body          # no network in this test
+    marks = cli.fetch_rh_marks()
+    assert marks["SPY"] == pytest.approx(764.62)      # the perp-style book's mark wins
+    assert marks["rhSPY"] == pytest.approx(764.62)
+    assert "XAU" not in marks and "rhXAU" not in marks
+
+
 def test_num_parses_venue_strings_and_rejects_junk():
     assert core.num("1106.603906329141") == pytest.approx(1106.603906329141)
     assert core.num("junk") is None

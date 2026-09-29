@@ -174,6 +174,7 @@ def normalize_lighter(raw: dict, index: int, host: str, venue: str, label: str,
     errors: list[str] = []
     markets = raw.get("positions") or []
     locked_only: list[str] = []
+    locked_counted: list[str] = []
     stake_notes: list[str] = []
     unpriced: list[str] = []
 
@@ -190,12 +191,26 @@ def normalize_lighter(raw: dict, index: int, host: str, venue: str, label: str,
         margin = num(a.get("margin_balance"), 0.0) or 0.0
         plain = num(a.get("balance"), 0.0) or 0.0
         amt = margin if margin else plain
+        locked = num(a.get("locked_balance"), 0.0) or 0.0
         if not amt:
-            # A holding that only ever appears in the venue's locked_balance is NOT read here
-            # (and would break the account on a missing price) — it is named instead, so the
-            # gap is visible rather than silently absent.
-            if sym and (num(a.get("locked_balance"), 0.0) or 0.0) > 0:
-                locked_only.append(sym)
+            # A holding that only ever appears in the venue's locked_balance: real, reported by the
+            # venue as an asset of this account, but not spendable balance — so it is outside the
+            # venue's total too, exactly like any other non-stable holding. When a feed prices it,
+            # it is counted as its own `locked` row. When none does, it is NAMED and skipped: an
+            # unpriceable row must never be allowed to poison the artifact.
+            #
+            # It used to be excluded even when priceable. That was policy, not data: the holding was
+            # left out of the totals for no reason the venue's own fields supported.
+            if sym and locked > 0:
+                price = 1.0 if sym in STABLES else (rates.get(sym) or marks.get(sym))
+                if price is None:
+                    locked_only.append(sym)
+                else:
+                    locked_counted.append(f"{sym} {locked:g}")
+                    positions.append({
+                        "asset": sym, "kind": "locked", "amount": round(locked, 12),
+                        "price_usd": price, "usd": round(locked * price, 2),
+                    })
             continue
         price = 1.0 if sym in STABLES else (rates.get(sym) or marks.get(sym))
         if price is None:
@@ -306,7 +321,7 @@ def normalize_lighter(raw: dict, index: int, host: str, venue: str, label: str,
         stable = sum(p["usd"] for p in positions
                      if p["kind"] == "cash" and p.get("usd") is not None)
         holdings = sum(p["usd"] for p in positions
-                       if p["kind"] in ("balance", "staked") and p.get("usd") is not None)
+                       if p["kind"] in ("balance", "staked", "locked") and p.get("usd") is not None)
         upnl = sum(num(p.get("unrealized_pnl"), 0.0) or 0.0
                    for p in positions if p["kind"] == "perp")
         # Measured on every account we read: `total_asset_value` = the STABLECOIN balance + perp
@@ -335,9 +350,12 @@ def normalize_lighter(raw: dict, index: int, host: str, venue: str, label: str,
                          f"value shown is the whole account")
         else:
             usd_total, source = venue_total, "venue"
+        if locked_counted:
+            notes.append(f"{', '.join(locked_counted)} is held in the venue's locked_balance — not "
+                         f"spendable and not in the venue's total — and IS counted here as its own row")
         if locked_only:
             notes.append(f"{', '.join(locked_only)} appears only in the venue's locked_balance and "
-                         f"is NOT counted — this account's value is understated")
+                         f"no feed prices it, so it is NOT counted — value understated by that much")
     else:
         usd_total = source = venue_total = None
     return {
