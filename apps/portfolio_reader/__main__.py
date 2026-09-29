@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import sys
 import urllib.request
 from datetime import datetime, timezone
@@ -210,7 +211,12 @@ def main(argv: list[str] | None = None) -> int:
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(artifact, indent=2) + "\n")
+    # ATOMIC: the dashboard polls this file every 60s, so an in-place write is a window where a
+    # poll reads half a JSON document and reports "positions not read" for the sake of a rewrite.
+    # tmp + rename means a reader ever sees the old artifact or the new one, never a torn one.
+    tmp = out.with_suffix(out.suffix + ".tmp")
+    tmp.write_text(json.dumps(artifact, indent=2) + "\n")
+    os.replace(tmp, out)
 
     # The book's own memory. One row per DAY, the day's last read: the reader runs on demand, so a
     # row per run would be noise, and the question this answers — is the book growing? — is daily.
@@ -230,7 +236,9 @@ def main(argv: list[str] | None = None) -> int:
                     continue          # a torn line is dropped, never allowed to kill the series
         rows = [r for r in rows if r.get("date") != row["date"]] + [row]
         rows.sort(key=lambda r: r.get("date") or "")
-        hist.write_text("".join(json.dumps(r, sort_keys=True) + "\n" for r in rows))
+        tmp_h = hist.with_suffix(hist.suffix + ".tmp")
+        tmp_h.write_text("".join(json.dumps(r, sort_keys=True) + "\n" for r in rows))
+        os.replace(tmp_h, hist)
         print(f"  history {len(rows)} day(s) · {hist.name}")
     except OSError as e:  # noqa: BLE001
         print(f"  ! could not append history: {e}")

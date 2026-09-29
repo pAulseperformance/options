@@ -11,3 +11,6 @@ __pycache__/
 data/book_watch_state.json
 data/hl_watch_state.json
 data/v3_watch_state.json
+data/portfolio_refresh_state.json
+data/.portfolio_refresh.lock
+data/*.tmp
