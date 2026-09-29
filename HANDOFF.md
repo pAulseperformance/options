@@ -52,8 +52,9 @@ reports **no venue available** — correct, and the point of the design.
   and never trades, by design. Buying the put is a human action on the venue's own interface.
 - **Only the 181d series is quoted** (272d and 363d empty at measurement, 2026-09-26). Re-run the
   adapter before acting on any plan; it re-measures rather than assumes.
-- **Derive v3 is at vote stage, not launched.** Production orderbook was empty at last probe
-  (2026-09-26; testnet has a book as positive control), and the "DIP: Launch Derive V3" Snapshot
+- **Derive v3 is staged live but not trading (vote stage).** Production books were empty at the
+  last re-probe (2026-09-29 — catalogue + WS staged live, zero quotes; testnet has a book as
+  positive control), and the "DIP: Launch Derive V3" Snapshot
   vote is live (2026-09-24 → Oct 4, ~99% For at reading). On approval: ≥14-day notice, then
   automatic V2→V3 migration + Derive Chain wind-down. Re-check with `ops/derive_book_probe.mjs`.
   **A non-empty production book is the trigger to re-point the adapter at v3.**
@@ -68,6 +69,11 @@ reports **no venue available** — correct, and the point of the design.
 3. **Re-run the v3 venue gate** (`ops/derive_book_probe.mjs`) when Derive announces v3 mainnet.
 4. **Keep pushing:** remote `origin` = `pAulseperformance/options` (exists — verified 2026-09-26);
    push `main` after each session. A local-only commit is not a backup.
+5. **DRV (the token) — entry decision deferred by Paul Mendes (2026-09-28): revisit after the V3
+   migration.** The reminder rides `ops/v3_watch.py` — a heads-up line on the vote-close and
+   migration-notice alerts, the full reminder (+ live price) when the venue starts trading. Sketch:
+   small spot only (no DRV perp on Derive/HL/Lighter), pilot + ladder $0.36 / $0.32, no chase above
+   $0.50; levels were read 2026-09-28 (post-pump range $0.375–0.509 — re-derive live before acting).
 
 ## Provenance
 
@@ -195,6 +201,19 @@ mid-October (vote close + ≥14-day notice). The 30-min book watch doubles as th
 when V2 winds down. Also checked for completeness: **no "V4" exists** (docs full-text, forum
 search, news — 2026-09-27); "V3" is the live upgrade, "HIP-4" is Hyperliquid's thing.
 New watch: `ops/v3_watch.py` (cron "Derive V3 Watch", daily 9:05) pings on vote close, migration
-notice, or the v3 API answering. (The book watch rewrites `data/quotes.json` +
-`data/coverage.json` every 30 min — those two files showing as modified in `git status` between
+notice, the v3 API answering (**fired 2026-09-28**), or the v3 venue starting to trade; it also
+carries the deferred DRV entry reminder (Open items #5). (The book watch rewrites `data/quotes.json`
++ `data/coverage.json` every 30 min — those two files showing as modified in `git status` between
 sessions is expected, not drift.)
+
+**V3 venue is materializing (2026-09-29) — staged live, all books empty, not trading.** The v3 API
+started answering; the watch flagged it to Signals exactly once (2026-09-28 09:05, delivered). It is
+now serving the full staged surface: 4,240 live instruments — ETH 792, BTC 659, HYPE 564, SOL 439 —
+including the long-dated ETH families the insurance plan wants (2027-03-26 / 06-25 / 09-24; puts
+across ~1.4k–3.6k strikes; `scheduled_activation` was 2026-09-25 08:00 UTC). But **every book is
+empty**: `ops/derive_book_probe.mjs` re-run against v3 (2026-09-29) got 8/8 WS snapshots at 0 bids /
+0 asks, ETH-PERP ticker stats are zero (oi 0, trades 0), trade history empty. v2 remains the trading
+venue (fills at ~$2,697). Port notes for v3: `public/get_instruments` is gone — use
+`get_all_instruments` / `get_all_live_instruments`; option tickers take `expiry_date=YYYYMMDD`;
+`tx_status` → `batch_status`; currency data reshaped by risk universes
+(docs.derive.xyz/migrating/breaking-changes).
