@@ -325,6 +325,64 @@ def test_num_parses_venue_strings_and_rejects_junk():
     assert core.num(None, 0.0) == 0.0
 
 
+def test_a_throttled_account_is_retried_once_and_only_for_throttling():
+    """The venue answers a burst with 429/405 rather than data, and one walled account poisons
+    `complete` — understating the book and making the planner refuse it. Retry that, once."""
+    from portfolio_reader import __main__ as cli
+
+    calls, slept = [], []
+
+    def walled_once():
+        calls.append(1)
+        if len(calls) == 1:
+            raise RuntimeError("ApiException: (429) Reason: Too Many Requests")
+        return {"l1_address": "0xe83ECEe6ad078a64F641BdA924c841Fd0F7D58f9"}
+
+    assert cli.read_account(walled_once, sleep=slept.append) == {"l1_address": "0xe83ECEe6ad078a64F641BdA924c841Fd0F7D58f9"}
+    assert len(calls) == 2 and slept == [cli.RATE_LIMIT_BACKOFF_S]
+
+
+def test_a_non_throttling_failure_is_not_retried():
+    """A timeout or a malformed read is a DIFFERENT problem: retrying it buys nothing and spends
+    more of the budget that is already the scarce thing."""
+    from portfolio_reader import __main__ as cli
+
+    calls = []
+
+    def broken():
+        calls.append(1)
+        raise TimeoutError("read timed out")
+
+    with pytest.raises(TimeoutError):
+        cli.read_account(broken, sleep=lambda _s: pytest.fail("must not back off and retry"))
+    assert len(calls) == 1
+
+
+def test_a_persistent_wall_still_fails_the_account():
+    """One retry is not a hammer: a budget that is still closed a few seconds later needs the next
+    tick, and the account must still be reported as failed so `complete` goes false."""
+    from portfolio_reader import __main__ as cli
+
+    calls = []
+
+    def always_walled():
+        calls.append(1)
+        raise RuntimeError("ApiException: (429)")
+
+    with pytest.raises(RuntimeError):
+        cli.read_account(always_walled, sleep=lambda _s: None)
+    assert len(calls) == 2
+
+
+def test_is_rate_limited_reads_the_error_not_the_caller():
+    from portfolio_reader import __main__ as cli
+
+    assert cli.is_rate_limited(RuntimeError("HTTPError: 429 Too Many Requests"))
+    assert cli.is_rate_limited(RuntimeError("HTTP 405 method not allowed"))
+    assert not cli.is_rate_limited(TimeoutError("read timed out"))
+    assert not cli.is_rate_limited(RuntimeError("Lighter returned no account for index 7"))
+
+
 def test_a_built_artifact_matches_the_published_schema():
     jsonschema = pytest.importorskip("jsonschema")
     art = bank([l1_account(), lighter_account(1), lighter_account(-1, "Lighter · RH chain"),

@@ -17,6 +17,7 @@ import asyncio
 import json
 import os
 import sys
+import time
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
@@ -150,6 +151,39 @@ async def _lighter_account(host: str, index: int) -> dict:
         await client.close()
 
 
+RATE_LIMIT_MARKERS = ("429", "rate limit", "too many requests", "405")
+RATE_LIMIT_BACKOFF_S = 3.0
+
+
+def is_rate_limited(err: BaseException) -> bool:
+    """Does this failure look like the venue throttling US rather than the account being broken?"""
+    text = f"{type(err).__name__}: {err}".lower()
+    return any(m in text for m in RATE_LIMIT_MARKERS)
+
+
+def read_account(fetch, attempts: int = 2, backoff_s: float = RATE_LIMIT_BACKOFF_S,
+                 sleep=time.sleep):
+    """One account, read once — or twice when the venue throttled us.
+
+    The public endpoint answers a burst with 429/405 rather than data (observed: two of nine
+    accounts walled on one run, whole again on the next tick), and a reader on a five-minute clock
+    has to live inside that budget. One walled account is not a small thing: it poisons `complete`,
+    which understates the book and makes the coverage planner refuse the artifact. So retry — but
+    ONLY on a throttling-shaped failure (a timeout or a malformed payload is a different problem and
+    is reported at once, since retrying it just costs more of what is already scarce), and only
+    once: a rolling budget needs the next tick, not a hammer.
+    """
+    last: BaseException | None = None
+    for i in range(attempts):
+        try:
+            return fetch()
+        except Exception as e:  # noqa: BLE001 - re-raised below unless it is worth one retry
+            if i + 1 >= attempts or not is_rate_limited(e):
+                raise
+            sleep(backoff_s)
+    raise RuntimeError("unreachable")  # unreachable: the loop either returns or raises
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="portfolio_reader", description=__doc__)
     ap.add_argument("--wallet", default=DEFAULT_WALLET,
@@ -199,7 +233,7 @@ def main(argv: list[str] | None = None) -> int:
 
     for venue, label, host, index, role in LIGHTER:
         try:
-            raw = asyncio.run(_lighter_account(host, index))
+            raw = read_account(lambda: asyncio.run(_lighter_account(host, index)))
             accounts.append(core.normalize_lighter(raw, index, host, venue, label, rates,
                                                    role, market))
         except Exception as e:  # noqa: BLE001
