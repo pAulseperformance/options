@@ -54,3 +54,27 @@ def test_a_generated_quotes_artifact_matches_its_schema():
     schema = json.loads((ROOT / "packages" / "options_contracts" / "quotes.schema.json")
                         .read_text())
     jsonschema.validate(artifact, schema)
+
+
+def test_a_v3_deployment_quotes_artifact_matches_its_schema():
+    """The same contract holds for the staged deployment's measurements (testnet fixture)."""
+    doc = json.loads((FIXTURES / "derive_v3_testnet_ws_scan_1.json").read_text())
+    snapshots, observed = {}, datetime.fromisoformat(doc["fetched_at"].replace("Z", "+00:00"))
+    for row in doc["rows"]:
+        if row["instrument"].endswith("-PERP"):
+            continue
+        snapshots[row["instrument"]] = {
+            "bids": [[str(row["bid"]), str(row["bid_size"])]] if row["bid"] else [],
+            "asks": [[str(row["ask"]), str(row["ask_size"])]] if row["ask"] else [],
+        }
+    rows = rows_from_snapshots(snapshots, observed)
+    sel = select_protective_put(rows, {"min_tenor_days": 180, "strike_otm_pct": 10.0},
+                                doc["spot"], min_tradable_size=0.1)
+    artifact = build_artifact(
+        venue="derive", deployment="v3 · zkVM on Ethereum L1", endpoint="wss://x",
+        asset="ETH", fetched_at=observed, spot=doc["spot"], spot_source="ETH-PERP mid",
+        policy_inputs={"min_tenor_days": 180}, rows=rows, selected=sel, notes=["n"],
+    )
+    schema = json.loads((ROOT / "packages" / "options_contracts" / "quotes.schema.json")
+                        .read_text())
+    jsonschema.validate(artifact, schema)

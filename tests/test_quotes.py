@@ -18,7 +18,8 @@ sys.path.insert(0, str(ROOT / "packages"))
 sys.path.insert(0, str(ROOT / "apps"))
 
 from derive_quotes.quote import (  # noqa: E402
-    best_levels, build_artifact, parse_instrument, rows_from_snapshots, select_protective_put,
+    best_levels, build_artifact, catalogue_instruments, parse_instrument, pick_deployment,
+    rows_from_snapshots, select_protective_put,
 )
 
 FIXTURES = ROOT / "tests" / "fixtures"
@@ -171,3 +172,66 @@ def test_artifact_carries_the_ladder_the_selection_and_provenance():
     ladder = {r["instrument"] for r in art["ladder"]}
     assert "ETH-20270924-3000-P" in ladder   # the empty 362d board is still evidence
     assert art["fetched_at"].endswith("Z")
+
+
+# --- v3 deployment: the port's fixtures (recorded 2026-09-29) ----------------------------------
+
+V3_TESTNET = "derive_v3_testnet_ws_scan_1.json"
+V3_PROD = "derive_v3_prod_ws_scan_1.json"
+
+
+def test_catalogue_normalizes_v2_and_v3_shapes():
+    """v2: a bare list. v3: {instruments, pagination} under result. One shape downstream."""
+    assert catalogue_instruments({"result": [{"instrument_name": "ETH-1"}]}) == \
+        [{"instrument_name": "ETH-1"}]
+    assert catalogue_instruments({"result": {"instruments": [{"instrument_name": "ETH-2"}],
+                                             "pagination": {"num_pages": 1}}}) == \
+        [{"instrument_name": "ETH-2"}]
+    assert catalogue_instruments({}) == []
+
+
+def test_pick_deployment_ladder():
+    """A buyable put beats a mere market; a market beats an empty-but-functional venue; ties keep
+    the caller's preference order (v3 first in production)."""
+    put_beats_market = [{"key": "v3", "selected": None, "genuine": 2, "spot_ok": True},
+                        {"key": "v2", "selected": {"instrument": "X"}, "genuine": 3, "spot_ok": True}]
+    assert pick_deployment(put_beats_market) == 1
+    both_selected = [{"key": "v3", "selected": {"instrument": "A"}, "genuine": 0, "spot_ok": True},
+                     {"key": "v2", "selected": {"instrument": "B"}, "genuine": 0, "spot_ok": True}]
+    assert pick_deployment(both_selected) == 0
+    only_functional = [{"key": "v3", "selected": None, "genuine": 0, "spot_ok": False},
+                       {"key": "v2", "selected": None, "genuine": 0, "spot_ok": True}]
+    assert pick_deployment(only_functional) == 1
+    assert pick_deployment([{"key": "v3", "selected": None, "genuine": 0, "spot_ok": False}]) is None
+
+
+def test_v3_testnet_fixture_prices_the_put_in_bps_of_notional():
+    snapshots, spot, observed = load_fixture(V3_TESTNET)
+    rows = {r.instrument: r for r in rows_from_snapshots(snapshots, observed)}
+    put = rows["ETH-20270326-3000-P"]
+    assert put.ask == 544.0
+    assert put.premium_bps(spot) == pytest.approx(2004.2, abs=0.5)
+
+
+def test_v3_selection_takes_lowest_cost_per_day_of_cover():
+    """360d at ~1306 bps beats 269d at ~1084 bps on the honest comparator (cost/day)."""
+    snapshots, spot, observed = load_fixture(V3_TESTNET)
+    expiry_times = {"ETH-20270924-2400-P": datetime(2027, 9, 24, 8, 0, tzinfo=timezone.utc)}
+    rows = rows_from_snapshots(snapshots, observed, expiry_times)
+    sel = select_protective_put(rows, POLICY, spot, min_tradable_size=0.1)
+    assert sel is not None
+    assert sel["instrument"] == "ETH-20270924-2400-P"
+    assert sel["premium_bps"] == pytest.approx(1305.7, abs=0.5)
+    assert sel["tenor_days"] == pytest.approx(360.0, abs=0.05)
+    assert sel["basis"] == "ask"
+
+
+def test_v3_prod_fixture_is_staged_empty_and_yields_nothing():
+    """The staged deployment serves empty books — that is a measurement ('unquoted'), not an
+    error, and it must never qualify for selection."""
+    snapshots, spot, observed = load_fixture(V3_PROD)
+    rows = rows_from_snapshots(snapshots, observed)
+    assert rows and all(not r.two_sided for r in rows)
+    assert spot is None  # no perp book on the staged venue either
+    sel = select_protective_put(rows, POLICY, 2714.23, min_tradable_size=0.1)
+    assert sel is None

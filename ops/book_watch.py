@@ -11,6 +11,10 @@ Contract:
 Side effect: refreshes data/quotes.json + data/coverage.json every tick, so the
 trading dashboard stays current between manual runs.
 
+Deployment-aware: the scanner picks the deployment to measure (v3 first, v2 fallback),
+and alerts fire both when a book returns and when the published deployment moves —
+"the pipeline now measures v3" is the migration-era signal, with or without quotes.
+
 State: data/book_watch_state.json (dedupe signature). Stdlib only.
 """
 import json
@@ -26,35 +30,61 @@ GENUINE_MIN_SIZE = 1.0  # a two-sided quote at size >= 1.0 is a real market, not
 
 
 def evaluate(q, prev):
-    """Pure decision + dedupe. Returns (alert_text_or_None, new_state_signature)."""
+    """Pure decision + dedupe. Returns (alert_text_or_None, new_state_signature).
+
+    Fires when the long-dated book newly has something to buy — or when the published
+    deployment itself moved (v3 coming up, or falling back — the migration-era signal).
+    Also fires once when the pipeline's source becomes v3 even with no quotes yet: the
+    venue transition is worth knowing before its book fills.
+    """
     two = [r for r in q.get("ladder", []) if r.get("bid") and r.get("ask")]
     genuine = [r for r in two if (r.get("ask_size") or 0) >= GENUINE_MIN_SIZE]
+    dep = q.get("deployment") or ""
     sig = {
+        "deployment": dep,
         "genuine": sorted(r["instrument"] for r in genuine),
         "selected": (q.get("selected") or {}).get("instrument"),
     }
-    was = bool(prev.get("genuine")) or bool(prev.get("selected"))
-    now = bool(genuine) or bool(sig["selected"])
-    if not (now and not was):
-        return None, sig
-    lines = ["DERIVE LONG-DATED BOOK IS BACK"]
-    for r in sorted(genuine, key=lambda r: r.get("premium_bps_ask") or 9e9)[:4]:
-        lines.append(
-            "  {i}: bid {b} / ask {a} x size {s} — {p} bps, {t:.0f}d".format(
-                i=r["instrument"],
-                b=r.get("bid"),
-                a=r.get("ask"),
-                s=r.get("ask_size"),
-                p=r.get("premium_bps_ask"),
-                t=r.get("tenor_days") or 0,
+    was_has = bool(prev.get("genuine")) or bool(prev.get("selected"))
+    now_has = bool(genuine) or bool(sig["selected"])
+    moved = bool(prev.get("deployment")) and prev["deployment"] != dep
+
+    if now_has and (not was_has or moved):
+        head = "DERIVE LONG-DATED BOOK IS BACK"
+        if moved:
+            head += f" — venue moved to {dep}"
+        elif dep:
+            head += f" ({dep})"
+        lines = [head]
+        for r in sorted(genuine, key=lambda r: r.get("premium_bps_ask") or 9e9)[:4]:
+            lines.append(
+                "  {i}: bid {b} / ask {a} x size {s} — {p} bps, {t:.0f}d".format(
+                    i=r["instrument"],
+                    b=r.get("bid"),
+                    a=r.get("ask"),
+                    s=r.get("ask_size"),
+                    p=r.get("premium_bps_ask"),
+                    t=r.get("tenor_days") or 0,
+                )
             )
-        )
-    if sig["selected"]:
-        lines.append(f"policy-selected: {sig['selected']} — the plan can republish as COVERED")
-    else:
-        lines.append("no policy-qualifying put yet (premium/size vs config/policy.yml)")
-    lines.append("window may be brief — last time the maker left within 90 minutes.")
-    return "\n".join(lines), sig
+        if sig["selected"]:
+            lines.append(f"policy-selected: {sig['selected']} — the plan can republish as COVERED")
+        else:
+            lines.append("no policy-qualifying put yet (premium/size vs config/policy.yml)")
+        if "v3" in dep:
+            lines.append("first quotes on the new venue — expected around the migration; "
+                         "the plan reprices from this measurement.")
+        lines.append("window may be brief — last time the maker left within 90 minutes.")
+        return "\n".join(lines), sig
+
+    if moved and "v3" in dep:
+        return "\n".join([
+            "DERIVE PIPELINE MOVED TO V3 — the measured deployment changed, v2 is quiet;",
+            f"{dep} is now the venue being watched, no quotes yet.",
+            "This is the migration-era transition; the watch keeps measuring v3 every 30 min.",
+        ]), sig
+
+    return None, sig
 
 
 def find_uv():

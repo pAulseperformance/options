@@ -14,7 +14,8 @@ published and real; `data/quotes.json` is the measurement behind it (from `apps/
 **The venue exists:** Derive **v2** (`api.lyra.finance`, Derive Chain) trades live today —
 ETH-PERP settles continuously on-chain and the 181d put ladder is quoted two-sided. Derive **v3**
 (`api.derive.xyz`) is the zkVM-on-L1 successor — production book still empty, **launch vote live
-until Oct 4** (see tail); it stays unlisted until it trades. Without fresh quotes the plan still
+until Oct 4** (see tail). **The adapter now reads both deployments automatically — ported and
+testnet-validated 2026-09-29 (see tail); it switches to v3 the moment v3 quotes.** Without fresh quotes the plan still
 reports **no venue available** — correct, and the point of the design.
 
 ## Decisions already made (do not re-derive)
@@ -35,10 +36,10 @@ reports **no venue available** — correct, and the point of the design.
   accounts; sourcing that number is the caller's job, and a decision layer that fetches its own
   inputs cannot be tested.
 - **Gate closed by default; live-but-unquoted is still unavailable.** Both asserted by tests.
-- **The venue is v2, not v3 — for now.** `api.lyra.finance` (v2 · Derive Chain) is live and
-  quoted; `api.derive.xyz/v3` is pre-launch with an empty production book and stays unlisted
-  until its book fills. Re-gate with `ops/derive_book_probe.mjs`; a non-empty production book is
-  the trigger to re-point the adapter.
+- **The adapter measures both deployments — v3 first, v2 fallback (ported 2026-09-29).** v2
+  (`api.lyra.finance`) is live and quoted today; v3 (`api.derive.xyz/v3`) is staged with an empty
+  production book, and is measured automatically the moment it quotes — no manual re-point. The
+  manual gate remains `ops/derive_book_probe.mjs` (testnet as positive control).
 - **The adapter measures; it never trades.** Buying remains a human action — this repo holds no
   keys, and that is a design, not a gap.
 - **Premiums come from measurements, never from policy.** policy's `premium_bps` is a placeholder
@@ -57,7 +58,8 @@ reports **no venue available** — correct, and the point of the design.
   positive control), and the "DIP: Launch Derive V3" Snapshot
   vote is live (2026-09-24 → Oct 4, ~99% For at reading). On approval: ≥14-day notice, then
   automatic V2→V3 migration + Derive Chain wind-down. Re-check with `ops/derive_book_probe.mjs`.
-  **A non-empty production book is the trigger to re-point the adapter at v3.**
+  **The adapter is already ported (auto-selects v3 the moment its book quotes) — nothing manual
+  is left but watching the alerts at migration.**
 
 ## Open items
 
@@ -66,7 +68,9 @@ reports **no venue available** — correct, and the point of the design.
 2. **Rail the dashboard** — DONE (2026-09-26): *Options Insurance* card + `GET /api/options-coverage`
    (`options.coverage.view/1`) on the trading dashboard read `data/coverage.json`; the card says
    EXPIRED past the quote window and never executes.
-3. **Re-run the v3 venue gate** (`ops/derive_book_probe.mjs`) when Derive announces v3 mainnet.
+3. **v3 at migration:** the reader is ported (2026-09-29 — auto v3-first, testnet-validated); the
+   book watch alerts if the published deployment moves. Re-run `ops/derive_book_probe.mjs` for a
+   manual check whenever wanted.
 4. **Keep pushing:** remote `origin` = `pAulseperformance/options` (exists — verified 2026-09-26);
    push `main` after each session. A local-only commit is not a backup.
 5. **DRV (the token) — entry decision deferred by Paul Mendes (2026-09-28): revisit after the V3
@@ -227,3 +231,18 @@ reader port can be dry-run end-to-end before migration day. `ops/derive_book_pro
 v2 spot currency too). Full recon (catalogue shapes, ticker routes, gotchas) is in skill
 `derive-platform` → `references/v2-to-v3-migration.md`. DRV token dossier filed at
 `Trading-Vault/Research/Crypto/DRV.md` (open item #5 remains the reminder).
+
+**v3 reader ported (2026-09-29) — the pipeline measures the new venue the day it quotes.** The
+adapter change the 2026-09-26 note deferred ("re-pointing ENDPOINTS") is done, and automated:
+`apps/derive_quotes` now carries both deployments and a `--deployment` choice (`auto` default =
+**v3 first, v2 fallback**). Selection ladder: a deployment with a policy-qualifying put wins; else
+any genuine two-sided quote; else a merely functional venue (an empty board is still a published
+answer — "unquoted"). If nothing is functional anywhere it fails loud with every reason.
+`ops/book_watch.py` went deployment-aware: it alerts when a book returns **or** when the published
+deployment moves — "the pipeline now measures v3" is the migration-era signal, with or without
+quotes yet (`DERIVE PIPELINE MOVED TO V3` fires once). Evidence: **testnet dry-run end-to-end**
+(populated: 35-book long-dated ladder, selected `ETH-20270924-2400-P` @ 1319 bps) and **prod auto**
+(v3 correctly skipped — "no ETH-PERP book — venue staged"; v2 published, still no two-sided
+long-dated put). Fixtures recorded: `tests/fixtures/derive_v3_{testnet,prod}_ws_scan_1.json`;
+suite 85 green. Also fixed a pre-existing red test: the portfolio schema was missing the `locked`
+position kind the reader has published since 2026-09-28.

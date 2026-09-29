@@ -1,0 +1,196 @@
+{
+  "fetched_at": "2026-09-29T08:06:08.544936Z",
+  "ws": "wss://testnet.api.derive.xyz/v3/ws",
+  "spot": 2714.23,
+  "rows": [
+    {
+      "instrument": "ETH-PERP",
+      "bid": "2714.03",
+      "bid_size": "5.0",
+      "ask": "2714.43",
+      "ask_size": "4.9",
+      "n_bids": 5,
+      "n_asks": 5
+    },
+    {
+      "instrument": "ETH-20261225-2400-P",
+      "bid": "125.2",
+      "bid_size": "50.0",
+      "ask": "129.2",
+      "ask_size": "50.0",
+      "n_bids": 1,
+      "n_asks": 1
+    },
+    {
+      "instrument": "ETH-20261225-2600-P",
+      "bid": "201.0",
+      "bid_size": "50.0",
+      "ask": "205.0",
+      "ask_size": "50.0",
+      "n_bids": 1,
+      "n_asks": 1
+    },
+    {
+      "instrument": "ETH-20261225-2800-P",
+      "bid": "304.6",
+      "bid_size": "50.0",
+      "ask": "308.6",
+      "ask_size": "50.0",
+      "n_bids": 1,
+      "n_asks": 1
+    },
+    {
+      "instrument": "ETH-20261225-3000-P",
+      "bid": "433.4",
+      "bid_size": "50.0",
+      "ask": "437.4",
+      "ask_size": "50.0",
+      "n_bids": 1,
+      "n_asks": 1
+    },
+    {
+      "instrument": "ETH-20261225-3200-P",
+      "bid": "582.3",
+      "bid_size": "50.0",
+      "ask": "586.3",
+      "ask_size": "50.0",
+      "n_bids": 1,
+      "n_asks": 1
+    },
+    {
+      "instrument": "ETH-20270326-2400-P",
+      "bid": "223.6",
+      "bid_size": "50.0",
+      "ask": "227.6",
+      "ask_size": "50.0",
+      "n_bids": 1,
+      "n_asks": 1
+    },
+    {
+      "instrument": "ETH-20270326-2600-P",
+      "bid": "310.9",
+      "bid_size": "50.0",
+      "ask": "314.9",
+      "ask_size": "50.0",
+      "n_bids": 1,
+      "n_asks": 1
+    },
+    {
+      "instrument": "ETH-20270326-2800-P",
+      "bid": "416.9",
+      "bid_size": "50.0",
+      "ask": "420.9",
+      "ask_size": "50.0",
+      "n_bids": 1,
+      "n_asks": 1
+    },
+    {
+      "instrument": "ETH-20270326-3000-P",
+      "bid": "540.0",
+      "bid_size": "50.0",
+      "ask": "544.0",
+      "ask_size": "50.0",
+      "n_bids": 1,
+      "n_asks": 1
+    },
+    {
+      "instrument": "ETH-20270326-3200-P",
+      "bid": "677.7",
+      "bid_size": "50.0",
+      "ask": "681.7",
+      "ask_size": "50.0",
+      "n_bids": 1,
+      "n_asks": 1
+    },
+    {
+      "instrument": "ETH-20270625-2400-P",
+      "bid": "290.3",
+      "bid_size": "50.0",
+      "ask": "294.3",
+      "ask_size": "50.0",
+      "n_bids": 1,
+      "n_asks": 1
+    },
+    {
+      "instrument": "ETH-20270625-2600-P",
+      "bid": "386.3",
+      "bid_size": "50.0",
+      "ask": "390.3",
+      "ask_size": "50.0",
+      "n_bids": 1,
+      "n_asks": 1
+    },
+    {
+      "instrument": "ETH-20270625-2800-P",
+      "bid": "497.3",
+      "bid_size": "50.0",
+      "ask": "501.3",
+      "ask_size": "50.0",
+      "n_bids": 1,
+      "n_asks": 1
+    },
+    {
+      "instrument": "ETH-20270625-3000-P",
+      "bid": "621.1",
+      "bid_size": "50.0",
+      "ask": "625.1",
+      "ask_size": "50.0",
+      "n_bids": 1,
+      "n_asks": 1
+    },
+    {
+      "instrument": "ETH-20270625-3200-P",
+      "bid": "756.0",
+      "bid_size": "50.0",
+      "ask": "760.0",
+      "ask_size": "50.0",
+      "n_bids": 1,
+      "n_asks": 1
+    },
+    {
+      "instrument": "ETH-20270924-2400-P",
+      "bid": "350.4",
+      "bid_size": "50.0",
+      "ask": "354.4",
+      "ask_size": "50.0",
+      "n_bids": 1,
+      "n_asks": 1
+    },
+    {
+      "instrument": "ETH-20270924-2600-P",
+      "bid": "447.8",
+      "bid_size": "50.0",
+      "ask": "451.8",
+      "ask_size": "50.0",
+      "n_bids": 1,
+      "n_asks": 1
+    },
+    {
+      "instrument": "ETH-20270924-2800-P",
+      "bid": "557.8",
+      "bid_size": "50.0",
+      "ask": "561.8",
+      "ask_size": "50.0",
+      "n_bids": 1,
+      "n_asks": 1
+    },
+    {
+      "instrument": "ETH-20270924-3000-P",
+      "bid": "679.0",
+      "bid_size": "50.0",
+      "ask": "683.0",
+      "ask_size": "50.0",
+      "n_bids": 1,
+      "n_asks": 1
+    },
+    {
+      "instrument": "ETH-20270924-3200-P",
+      "bid": "810.1",
+      "bid_size": "50.0",
+      "ask": "814.1",
+      "ask_size": "50.0",
+      "n_bids": 1,
+      "n_asks": 1
+    }
+  ]
+}

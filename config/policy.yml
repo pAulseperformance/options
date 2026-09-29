@@ -34,8 +34,9 @@ venues:
   # ETH-PERP trades settle on-chain continuously and the 181d put ladder (strikes 1800–3000) is
   # quoted two-sided. The 272d/363d series were EMPTY. Premiums are measured by
   # `apps/derive_quotes` -> data/quotes.json; the 0.0 below is a placeholder and never wins.
-  # v3 (api.derive.xyz) is the pre-launch zk stack — NOT listed until its production book fills;
-  # re-check with ops/derive_book_probe.mjs (the v3 gate, testnet as positive control).
+  # v3 (api.derive.xyz) is the zkVM-on-L1 successor — staged; the adapter auto-selects it the
+  # moment its book quotes (ported 2026-09-29), v2 as fallback while it trades. Manual check:
+  # ops/derive_book_probe.mjs (testnet as positive control).
   - kind: put_venue
     venue: derive
     live: true

@@ -17,7 +17,8 @@ from datetime import datetime, timezone
 from options_core import costs
 
 __all__ = ["QuoteRow", "best_levels", "parse_instrument", "rows_from_snapshots",
-           "select_protective_put", "build_artifact"]
+           "select_protective_put", "catalogue_instruments", "pick_deployment",
+           "build_artifact"]
 
 _NAME_RE = re.compile(r"^(?P<base>[A-Z0-9]+)-(?P<expiry>\d{8})-(?P<strike>\d+)-(?P<kind>[PC])$")
 
@@ -180,6 +181,37 @@ def select_protective_put(rows: list[QuoteRow], policy: dict, spot: float,
         "target_strike": round(target, 2),
         "strike_otm_pct": round(100.0 * (1.0 - row.strike / spot), 2),
     }
+
+
+def catalogue_instruments(payload: dict) -> list[dict]:
+    """Normalize a catalogue response across deployments: v2 returns a bare list under `result`;
+    v3 wraps the same instrument objects in `result.instruments` (paginated). One shape downstream."""
+    result = payload.get("result")
+    if isinstance(result, list):
+        return list(result)
+    if isinstance(result, dict):
+        return list(result.get("instruments") or [])
+    return []
+
+
+def pick_deployment(attempts: list[dict]) -> int | None:
+    """Which deployment's measurement gets published, attempts given in preference order.
+
+    First match wins along this ladder — a buyable put beats a mere market, a market beats a
+    functional-but-empty venue (an empty board is still an answer: "unquoted", and it must be
+    publishable when it is all a venue is showing):
+
+      1. `selected` — a policy-qualifying put, something the plan could actually buy;
+      2. `genuine`  — any two-sided quote of tradable size;
+      3. `spot_ok`  — a spot was measured at all.
+
+    None = nothing usable anywhere; the caller then fails loud with every attempt's reason.
+    """
+    for rank in ("selected", "genuine", "spot_ok"):
+        for i, a in enumerate(attempts):
+            if a.get(rank):
+                return i
+    return None
 
 
 def build_artifact(*, venue: str, deployment: str, endpoint: str, asset: str,

@@ -94,8 +94,8 @@
               "properties": {
                 "asset": { "type": "string" },
                 "kind": {
-                  "enum": ["cash", "spot", "balance", "staked", "perp"],
-                  "description": "cash = stablecoin; spot = L1 holding; balance = venue asset balance; staked = LIT committed to the venue's staking pool (custody the pool holds, so it appears in no balance); perp = signed position (the only kind that nets)."
+                  "enum": ["cash", "spot", "balance", "staked", "locked", "perp"],
+                  "description": "cash = stablecoin; spot = L1 holding; balance = venue asset balance; staked = LIT committed to the venue's staking pool (custody the pool holds, so it appears in no balance); locked = a holding that appears only in the venue's locked_balance — not spendable and not in the venue's own total — counted as its own row only when a feed prices it; perp = signed position (the only kind that nets)."
                 },
                 "side": { "type": ["string", "null"], "enum": ["long", "short", null] },
                 "amount": { "type": ["number", "null"] },

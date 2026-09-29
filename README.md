@@ -22,9 +22,10 @@ lives here, and venue-specific execution lands as an adapter when a venue actual
 and trading (verified 2026-09-26: ETH-PERP trades settling on-chain every few minutes, and the
 181-day put ladder quoted two-sided). `apps/derive_quotes` reads that book (public, read-only)
 and publishes `data/quotes.json`; `coverage_cli --quotes` prices the plan from it. Derive **v3**
-(`api.derive.xyz`) is a pre-launch zk stack with a verified-empty production orderbook — not
-listed until it trades (`ops/derive_book_probe.mjs` is the v3 gate). Lighter options do not exist
-yet. Deribit remains a **data source** for gamma walls, not a venue.
+(`api.derive.xyz`) is the zkVM-on-L1 successor — staged, production orderbook still empty; the
+adapter already reads it **automatically** (v3 first, v2 fallback — ported + testnet-validated
+2026-09-29), switching the day v3 quotes (`ops/derive_book_probe.mjs` remains the manual gate).
+Lighter options do not exist yet. Deribit remains a **data source** for gamma walls, not a venue.
 
 So this repo ships the decision, the measurement, and the plan — and never the order.
 
@@ -43,7 +44,7 @@ the position is the one failure insurance must never have.
 packages/options_contracts/  coverage.schema.json + quotes.schema.json + portfolio.schema.json — the "lego studs"
 packages/options_core/       the decision engine (costs, venues, plan, quote overlay)
 apps/coverage_cli/           asks "what should the insurance be?" and publishes data/coverage.json
-apps/derive_quotes/          reads the live Derive v2 book, read-only -> data/quotes.json
+apps/derive_quotes/          reads the live Derive book (v3 first, v2 fallback) -> data/quotes.json
 apps/portfolio_reader/       reads YOUR positions (L1 balances + Lighter accounts) -> data/portfolio.json
 config/policy.yml            every number is a config value, not a constant
 data/coverage.json           the published artifact other tools consume
@@ -145,9 +146,10 @@ custody to Ethereum L1 contracts and supersedes most of this analysis; see §V3 
   (16 strikes two-sided) and empty two-sided by 13:53 UTC the same day (the maker left; the perp
   kept trading). Re-measure at action time — the plan publishes "no venue available" itself when
   the book is gone, which is the honest answer.
-- **v3 re-gate — now an event with a calendar.** The "DIP: Launch Derive V3" Snapshot vote is live
-  (2026-09-24 → Oct 4, ~99% For); on approval: ≥14-day notice, then automatic V2→V3 migration and
-  Derive Chain wind-down (deposits move to Ethereum L1). Re-run `ops/derive_book_probe.mjs` and
-  port the adapter at launch — a non-empty production book is the trigger to re-point.
+- **v3 — ported and watched (2026-09-29).** The "DIP: Launch Derive V3" vote closes Oct 4
+  (~99% For); on approval: ≥14-day notice, then automatic V2→V3 migration and Derive Chain
+  wind-down (deposits move to Ethereum L1). The adapter already measures v3 first and falls back
+  to v2, and the book watch alerts when the measured deployment moves — at migration there is
+  nothing to port, only to verify.
 - `premium_bps` in policy stays `0.0` **on purpose**: it keeps a venue unquoted unless
   `data/quotes.json` is fresh. Never put a guessed premium there.
