@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Portfolio refresh — the reader's clock. Run every 5 min by Hermes cron (no_agent).
+"""Portfolio refresh — the reader's clock. Run EVERY MINUTE by Hermes cron (no_agent).
 
 Why this exists: every P&L on the trading dashboard's account band is a DISPLAY over
 `data/portfolio.json`, and that file only changes when `portfolio_reader` runs. Nothing scheduled
@@ -7,9 +7,19 @@ it, so the book's P&L was frozen at the last manual run (13.5h old the morning i
 while the mark prices printed beside it ticked every 20s — the panel looked live and was not.
 This script is the missing clock, nothing more: the reader itself is unchanged.
 
+Why a minute and not five: the band polls every 20s, so this clock IS the P&L's real refresh rate,
+and a five-minute one made the number step while everything around it moved. Measured BEFORE the
+change (three consecutive full reads ~30s apart, then a probe at 1-minute spacing over 8 ticks):
+the public account endpoint answered every read, and the share of ticks carrying a throttled
+account was the same ~10-14% at 1-minute spacing as at 5-minute spacing — the 429/405 walls come
+from the fleet's other venue traffic, not from this clock's own rate. Faster also SHORTENS each
+wall: an incomplete artifact now stands for a minute instead of five. ~17 calls and 6-9s per tick.
+
 Contract:
   stdout  EMPTY when the artifact republishes complete. A delivered message therefore always means
-          the READ is wrong (an account failed), never "the book moved".
+          the READ is wrong (an account failed), never "the book moved" — and only when that read
+          stays wrong: the venue answers a burst with 429/405 and the next read is whole again, so
+          a wall must survive PERSIST_TICKS reads before it is worth anyone's attention.
   exit 0  the refresh ran — including the case where the artifact published with a failed account
           (it still publishes, marked incomplete, on purpose).
   exit 1  the refresh itself is broken (reader wrote nothing / uv missing / unreadable artifact).
@@ -18,10 +28,11 @@ Contract:
 Two guards, both cheap:
   * a lock file, so a slow run and the next tick cannot overlap and interleave two writes;
   * a MIN_AGE floor on the artifact, so a manual `python -m portfolio_reader` and this tick do not
-    fight over the same file.
+    fight over the same file. It must stay UNDER the cron interval — at 90s a one-minute clock
+    skipped every other tick (60s < 90s) and quietly ran at two minutes instead.
 
-State: data/portfolio_refresh_state.json (incomplete-transition dedupe + hourly reminder of a read
-that keeps failing). Stdlib only — no venv, no deps, runs on the scheduler's python.
+State: data/portfolio_refresh_state.json (the incomplete streak, the hourly reminder of a read that
+keeps failing). Stdlib only — no venv, no deps, runs on the scheduler's python.
 """
 import fcntl
 import json
@@ -38,9 +49,12 @@ ARTIFACT = ROOT / "data" / "portfolio.json"
 STATE = ROOT / "data" / "portfolio_refresh_state.json"
 LOCK = ROOT / "data" / ".portfolio_refresh.lock"
 
-MIN_AGE_S = 90        # younger than this: somebody just read it (manual run) — do not re-read
+MIN_AGE_S = 40        # MUST stay below the cron interval (60s), or half the ticks are skipped. Its
+                      # only job is to not fight a read that just happened (a manual run, or a slow
+                      # previous tick) — it is not the pacing.
 READER_TIMEOUT = 300  # a full read is ~6s warm; this is a ceiling, not an expectation
 REMIND_EVERY_S = 3600 # a read that stays incomplete speaks once an hour, not every tick
+PERSIST_TICKS = 2     # consecutive incomplete reads before a wall is worth a message (see contract)
 LIGHTER_PIN = "lighter-sdk @ git+https://github.com/elliottech/lighter-python.git"
 
 
@@ -138,25 +152,39 @@ def main():
 
     if artifact.get("complete"):
         state = load_state()
-        if state.get("incomplete"):
+        if state.get("announced"):
             print("book read recovered — every account is readable again; totals and exposure are "
                   "whole.")
-        save_state({"incomplete": False, "since": None, "last_alert": None})
+        save_state({"incomplete": False, "since": None, "last_alert": None, "streak": 0,
+                    "announced": False})
         return 0
 
     now = time.time()
     state = load_state()
-    since = state.get("since") if state.get("incomplete") else None
+    was_incomplete = bool(state.get("incomplete"))
+    streak = (state.get("streak") or 0) + 1 if was_incomplete else 1
+    since = state.get("since") if was_incomplete else None
     since = since or artifact.get("fetched_at") or datetime.now(timezone.utc).isoformat()
-    fresh_news = not state.get("incomplete")
-    due = (now - (state.get("last_alert") or 0)) >= REMIND_EVERY_S
-    save_state({"incomplete": True, "since": since, "last_alert": now if (fresh_news or due) else state.get("last_alert")})
+    announced = bool(state.get("announced"))
+    # A single throttled account is a ONE-READ event: the venue answers a burst with 429/405 and the
+    # next read comes back whole (measured at 1-minute spacing: 1 tick in 7). Announcing every one of
+    # those would page the Signals topic for a blip that heals itself, so the signal is the read that
+    # STAYS incomplete — the same failure on PERSIST_TICKS consecutive reads — plus an hourly
+    # reminder for as long as it lasts. The streak resets on the first whole read.
+    fresh_news = (not announced) and streak >= PERSIST_TICKS
+    due = announced and (now - (state.get("last_alert") or 0)) >= REMIND_EVERY_S
+    if fresh_news or due:
+        announced = True
+    save_state({"incomplete": True, "since": since, "streak": streak, "announced": announced,
+                "last_alert": now if (fresh_news or due) else state.get("last_alert")})
     if fresh_news or due:
         bad = failed_accounts(artifact)
-        print("BOOK READ INCOMPLETE since %s — the dashboard's book UNDERSTATES reality right now.\n"
+        print("BOOK READ INCOMPLETE since %s (%d reads in a row) — the dashboard's book UNDERSTATES "
+              "reality right now.\n"
               "  %s\n"
               "  totals and exposure exclude what could not be read, and the plan refuses this "
-              "artifact by design." % (since, "\n  ".join(bad) if bad else "no per-account error text"))
+              "artifact by design." % (since, streak,
+                                       "\n  ".join(bad) if bad else "no per-account error text"))
     return 0
 
 
